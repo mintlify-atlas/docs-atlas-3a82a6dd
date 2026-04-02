@@ -1,0 +1,74 @@
+---
+title: "Extending IRB"
+description: "Add custom commands and helper methods to your IRB sessions using IRB's official extension API, available from v1.13.0."
+---
+
+From v1.13.0, IRB provides an official API for extending its functionality. Libraries can use this API to add new commands and helper methods tailored to their users' IRB sessions.
+
+There are two extension types: **commands** and **helper methods**.
+
+## Commands vs. helper methods
+
+Choosing the right extension type depends on what you want the user to do with it.
+
+<CardGroup cols={2}>
+  <Card title="Commands" icon="terminal" href="/extending/custom-commands">
+    Best for utility operations, displaying information, or accepting non-Ruby syntax arguments like `ls -g pattern` or `show_source Foo#bar`.
+  </Card>
+  <Card title="Helper methods" icon="wrench" href="/extending/helper-methods">
+    Best for shortcuts that return Ruby objects the user can interact with directly, such as `admin_user.posts.count`.
+  </Card>
+</CardGroup>
+
+Use commands when the extension:
+
+- Performs a utility operation not directly related to Ruby (like IRB's `edit` command)
+- Displays information (like `show_source`)
+- Requires non-Ruby syntax arguments (like `ls -g pattern`)
+
+Use helper methods when the extension:
+
+- Returns a Ruby object that the user will interact with (e.g., `admin_user` returning `User.where(admin: true).first`)
+- Provides a shortcut to a frequently accessed object or operation
+- Needs to be chained: `my_helper("foo", kwarg: "bar").upcase`
+
+<Tip>
+  If you're not sure which to use, go with commands. Commands are more flexible and handle a wider variety of inputs and use cases.
+</Tip>
+
+## How extensions are loaded
+
+Extensions are loaded before the IRB session starts. There are two common approaches:
+
+**In `.irbrc`** — Place the extension code directly in your `~/.irbrc` file. IRB evaluates this file on startup.
+
+```ruby ~/.irbrc
+require "irb/command"
+
+class Greet < IRB::Command::Base
+  # ...
+end
+
+IRB::Command.register(:greet, Greet)
+```
+
+**In a gem** — Ship the extension as part of a library. Users require the gem before or during their IRB session, and the extension becomes available automatically.
+
+```ruby
+# In your_gem/lib/your_gem/irb_ext.rb
+require "irb/command"
+
+class YourGem::IRBCommand < IRB::Command::Base
+  # ...
+end
+
+IRB::Command.register(:your_cmd, YourGem::IRBCommand)
+```
+
+```ruby ~/.irbrc
+require "your_gem/irb_ext"
+```
+
+<Note>
+  Extensions are typically loaded before the IRB session starts, via `.irbrc` or a required gem. You can also `require` an extension file from within a running IRB session — the command or helper method will become available immediately after the `require` call.
+</Note>

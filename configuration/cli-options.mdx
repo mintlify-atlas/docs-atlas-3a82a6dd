@@ -1,0 +1,357 @@
+---
+title: "Command-line options"
+description: "All IRB command-line options, what they do, and how they map to IRB.conf entries."
+---
+
+Command-line options let you configure an IRB session without editing a file. Most options set a corresponding entry in `IRB.conf`, which is then used to build the session context at startup.
+
+```shell
+irb [options] [script] [arguments]
+```
+
+<Note>
+  If a setting is also present in your configuration file (`.irbrc`), the configuration file value wins over the command-line option. See [Configuration overview](/configuration/overview) for the full precedence rules.
+</Note>
+
+## Input and output
+
+<AccordionGroup>
+  <Accordion title="--multiline / --nomultiline">
+    `--multiline` sets the input method to `IRB::RelineInputMethod` (the default for most terminals).
+    `--nomultiline` sets it to `IRB::ReadlineInputMethod`.
+
+    Combining `--nosingleline` and `--nomultiline` together selects `IRB::StdioInputMethod`.
+
+    Sets `IRB.conf[:USE_MULTILINE]`.
+
+    ```shell
+    irb --multiline
+    irb --nomultiline
+    ```
+  </Accordion>
+
+  <Accordion title="--singleline / --nosingleline">
+    `--singleline` sets the input method to `IRB::ReadlineInputMethod`.
+    `--nosingleline` sets it to `IRB::RelineInputMethod`.
+
+    Also accepted as `--readline` / `--noreadline` and `--legacy`.
+
+    Sets `IRB.conf[:USE_SINGLELINE]`.
+
+    ```shell
+    irb --singleline
+    irb --nosingleline
+    ```
+  </Accordion>
+
+  <Accordion title="--echo / --noecho">
+    `--echo` prints (echoes) the return value of each evaluated expression.
+    `--noecho` suppresses return-value output.
+
+    The default is `--echo`.
+
+    Sets `IRB.conf[:ECHO]`.
+
+    ```shell
+    irb --noecho
+    ```
+  </Accordion>
+
+  <Accordion title="--echo-on-assignment / --noecho-on-assignment / --truncate-echo-on-assignment">
+    Controls whether the return value of assignment statements is echoed:
+
+    - `--echo-on-assignment` — print in full.
+    - `--truncate-echo-on-assignment` — print truncated to one line (default).
+    - `--noecho-on-assignment` — suppress.
+
+    Sets `IRB.conf[:ECHO_ON_ASSIGNMENT]`.
+
+    ```shell
+    irb --noecho-on-assignment
+    irb --truncate-echo-on-assignment
+    ```
+  </Accordion>
+
+  <Accordion title="--inspect / --noinspect">
+    `--inspect` formats return values using `Object#inspect` (the default).
+    `--noinspect` uses `to_s` instead.
+
+    Sets `IRB.conf[:INSPECT_MODE]`.
+
+    ```shell
+    irb --noinspect
+    ```
+  </Accordion>
+
+  <Accordion title="--colorize / --nocolorize">
+    `--colorize` enables syntax highlighting for input and output (the default, unless `NO_COLOR` is set).
+    `--nocolorize` disables it.
+
+    Sets `IRB.conf[:USE_COLORIZE]`.
+
+    ```shell
+    irb --nocolorize
+    ```
+  </Accordion>
+
+  <Accordion title="--prompt / --prompt-mode">
+    Sets the prompt and return format. `mode` can be one of the pre-defined prompt names (`DEFAULT`, `SIMPLE`, `CLASSIC`, `INF_RUBY`, `XMP`, `NULL`) or a custom prompt name you have defined.
+
+    Sets `IRB.conf[:PROMPT_MODE]`.
+
+    ```shell
+    irb --prompt simple
+    irb --prompt-mode classic
+    ```
+  </Accordion>
+
+  <Accordion title="--noprompt">
+    Disables the prompt entirely by setting the prompt mode to `:NULL`.
+
+    Sets `IRB.conf[:PROMPT_MODE]` to `:NULL`.
+
+    ```shell
+    irb --noprompt
+    ```
+  </Accordion>
+
+  <Accordion title="--simple-prompt / --sample-book-mode">
+    Sets the prompt mode to `:SIMPLE` (`>> ` for input, `=> ` for return values).
+
+    ```shell
+    irb --simple-prompt
+    ```
+  </Accordion>
+
+  <Accordion title="--inf-ruby-mode">
+    Sets the prompt mode to `:INF_RUBY`, suitable for use with `inf-ruby-mode` in Emacs. Suppresses `--multiline` and `--singleline`.
+
+    Sets `IRB.conf[:PROMPT_MODE]` to `:INF_RUBY`.
+
+    ```shell
+    irb --inf-ruby-mode
+    ```
+  </Accordion>
+
+  <Accordion title="--verbose / --noverbose">
+    `--verbose` enables verbose output.
+    `--noverbose` disables it.
+
+    Sets `IRB.conf[:VERBOSE]`.
+
+    ```shell
+    irb --verbose
+    irb --noverbose
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Completion
+
+<AccordionGroup>
+  <Accordion title="--autocomplete / --noautocomplete">
+    `--autocomplete` enables tab-completion (the default).
+    `--noautocomplete` disables it.
+
+    Sets `IRB.conf[:USE_AUTOCOMPLETE]`.
+
+    ```shell
+    irb --noautocomplete
+    ```
+  </Accordion>
+
+  <Accordion title="--type-completor">
+    Selects `IRB::TypeCompletor` for completion, which performs type analysis for more accurate suggestions. Requires the `repl_type_completor` gem.
+
+    Sets `IRB.conf[:COMPLETOR]` to `:type`.
+
+    ```shell
+    irb --type-completor
+    ```
+  </Accordion>
+
+  <Accordion title="--regexp-completor">
+    Selects `IRB::RegexpCompletor` for completion (the default). Uses regexp-based matching.
+
+    Sets `IRB.conf[:COMPLETOR]` to `:regexp`.
+
+    ```shell
+    irb --regexp-completor
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Loading
+
+<AccordionGroup>
+  <Accordion title="-r load-module">
+    Requires the named module at startup — the same as `ruby -r`.
+
+    Appends to `IRB.conf[:LOAD_MODULES]`.
+
+    ```shell
+    irb -r csv -r json
+    ```
+  </Accordion>
+
+  <Accordion title="-I dirpath">
+    Prepends `dirpath` to `$LOAD_PATH` — the same as `ruby -I`.
+
+    ```shell
+    irb -I lib -I vendor/lib
+    ```
+  </Accordion>
+
+  <Accordion title="-f">
+    Skips the configuration file. IRB starts with only default settings, ignoring `.irbrc` and all other config file locations.
+
+    Sets `IRB.conf[:RC]` to `false`.
+
+    ```shell
+    irb -f
+    ```
+  </Accordion>
+
+  <Accordion title="--script / --noscript">
+    `--script` (the default) treats the first non-option argument as the path to an initialization script and omits it from `ARGV`.
+    `--noscript` treats the first argument as a regular argument and includes it in `ARGV`.
+
+    ```shell
+    irb --noscript Foo Bar Baz
+    # Inside IRB: ARGV => ["Foo", "Bar", "Baz"]
+    ```
+  </Accordion>
+
+  <Accordion title="--extra-doc-dir dirpath">
+    Adds a RI documentation directory to be loaded at startup, in addition to the default directories.
+
+    Appends to `IRB.conf[:EXTRA_DOC_DIRS]`.
+
+    ```shell
+    irb --extra-doc-dir your_doc_dir --extra-doc-dir my_doc_dir
+    ```
+  </Accordion>
+
+  <Accordion title="-- (double dash)">
+    Marks the end of options. Everything after `--` is treated as arguments, even strings that look like options.
+
+    ```shell
+    irb -- --noscript Foo Bar
+    # Inside IRB: ARGV => ["--noscript", "Foo", "Bar"]
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Debugging
+
+<AccordionGroup>
+  <Accordion title="--tracer">
+    Enables `Tracer` to print a stack trace for each evaluated input command.
+
+    Sets `IRB.conf[:USE_TRACER]` to `true`.
+
+    ```shell
+    irb --tracer
+    ```
+  </Accordion>
+
+  <Accordion title="--back-trace-limit n">
+    Sets the number of backtrace entries shown at the top and bottom of a backtrace. For example, `--back-trace-limit 5` shows at most the top 5 and bottom 5 entries.
+
+    Default: `16`. Sets `IRB.conf[:BACK_TRACE_LIMIT]`.
+
+    ```shell
+    irb --back-trace-limit 5
+    ```
+  </Accordion>
+
+  <Accordion title="--context-mode n">
+    Selects how the `Binding` object for each new workspace is created. `n` must be in the range `0..5`.
+
+    Default: `4` (a copy of `TOPLEVEL_BINDING`). Sets `IRB.conf[:CONTEXT_MODE]`.
+
+    ```shell
+    irb --context-mode 3
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Encoding
+
+<AccordionGroup>
+  <Accordion title="-E ex[:in]">
+    Sets the initial external encoding (`ex`) and optional internal encoding (`in`) — the same as `ruby -E`.
+
+    ```shell
+    irb -E UTF-8:UTF-8
+    irb -E UTF-8
+    ```
+  </Accordion>
+
+  <Accordion title="-U">
+    Sets both external and internal encodings to UTF-8.
+
+    ```shell
+    irb -U
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Warnings
+
+<AccordionGroup>
+  <Accordion title="-w">
+    Enables Ruby warnings — the same as `ruby -w`. Sets `$VERBOSE` to `true`.
+
+    ```shell
+    irb -w
+    ```
+  </Accordion>
+
+  <Accordion title="-W[level]">
+    Sets the warning level — the same as `ruby -W`. `0` silences warnings, `1` is medium, `2` is verbose.
+
+    ```shell
+    irb -W0
+    irb -W2
+    ```
+  </Accordion>
+
+  <Accordion title="-d">
+    Sets both `$DEBUG` and `$VERBOSE` to `true`.
+
+    ```shell
+    irb -d
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Other
+
+<AccordionGroup>
+  <Accordion title="--no-pager">
+    Disables the pager for long output (such as from `show_doc`).
+
+    Sets `IRB.conf[:USE_PAGER]` to `false`.
+
+    ```shell
+    irb --no-pager
+    ```
+  </Accordion>
+
+  <Accordion title="-v, --version">
+    Prints the IRB version string and exits.
+
+    ```shell
+    irb --version
+    ```
+  </Accordion>
+
+  <Accordion title="-h, --help">
+    Prints the IRB help text listing all available options and exits.
+
+    ```shell
+    irb --help
+    ```
+  </Accordion>
+</AccordionGroup>

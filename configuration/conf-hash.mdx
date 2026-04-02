@@ -1,0 +1,257 @@
+---
+title: "IRB.conf hash"
+description: "All IRB.conf keys, their types, default values, and what they control."
+---
+
+`IRB.conf` is a hash that holds all of IRB's current configuration settings. It is populated at startup from default values, command-line options, and your configuration file.
+
+## Viewing and setting values
+
+To inspect the full hash, type `IRB.conf` in a session:
+
+```ruby
+irb(main):001> IRB.conf
+```
+
+To read a single entry:
+
+```ruby
+irb(main):001> IRB.conf[:SAVE_HISTORY]
+=> 1000
+```
+
+To change a value, assign it in your configuration file (`.irbrc`) **before** the session context is built. Changes made after startup have no effect:
+
+```ruby
+# ~/.irbrc
+IRB.conf[:SAVE_HISTORY] = 5000
+IRB.conf[:PROMPT_MODE] = :SIMPLE
+```
+
+<Warning>
+  `IRB.conf` is applied once, when the configuration file is interpreted. Modifying it during a live session does not change the session's behavior.
+</Warning>
+
+---
+
+## Session
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `:AP_NAME` | String | `"irb"` | The application name for the IRB session. |
+| `:IRB_NAME` | String | `"irb"` | The IRB instance name, used in some prompts. |
+| `:CONTEXT_MODE` | Integer | `4` | How the `Binding` object for each workspace is created. Values `0`–`5` select different strategies; `4` uses a copy of `TOPLEVEL_BINDING`. |
+| `:SINGLE_IRB` | Boolean | `false` | Set to `true` when `--single-irb` is passed on the command line. |
+| `:MAIN_CONTEXT` | `IRB::Context` | _(set at startup)_ | The context object for the main IRB session. |
+| `:__MAIN__` | Object | `main` | The main IRB object. |
+| `:AT_EXIT` | Array | `[]` | Hooks called when the session exits. Add procs to this array in `.irbrc`. |
+| `:IRB_RC` | Proc / nil | `nil` | A callable invoked each time the configuration changes. Receives the context object as an argument. |
+| `:RC` | Boolean | `true` | `true` if a configuration file was found and loaded, `false` otherwise. Also accessible as `conf.rc?`. |
+| `:VERSION` | String | _(set at startup)_ | The current IRB version string. |
+| `:IRB_LIB_PATH` | String | _(set at startup)_ | Path to the IRB library directory. |
+| `:LC_MESSAGES` | `IRB::Locale` | _(set at startup)_ | Locale object used for IRB's own messages. |
+
+**Example: registering an exit hook**
+
+```ruby
+# ~/.irbrc
+IRB.conf[:AT_EXIT] << proc { puts "Goodbye!" }
+```
+
+**Example: configuration monitor**
+
+```ruby
+# ~/.irbrc
+IRB.conf[:IRB_RC] = proc { |conf| puts "Config changed: #{conf.class}" }
+```
+
+---
+
+## Input
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `:USE_MULTILINE` | Boolean / nil | `nil` | `true` forces `IRB::RelineInputMethod`; `false` forces `IRB::ReadlineInputMethod`; `nil` lets IRB auto-select. |
+| `:USE_SINGLELINE` | Boolean / nil | `nil` | `true` forces `IRB::ReadlineInputMethod`; `false` forces `IRB::RelineInputMethod`; `nil` lets IRB auto-select. |
+| `:AUTO_INDENT` | Boolean | `true` | Whether IRB automatically indents multi-line expressions. |
+| `:IGNORE_EOF` | Boolean | `false` | When `true`, typing `Ctrl-D` (end-of-file) does not exit the session. |
+| `:IGNORE_SIGINT` | Boolean | `true` | When `true`, typing `Ctrl-C` does not exit the session. |
+| `:COMMAND_ALIASES` | Hash | `{:"$" => :show_source, :"@" => :whereami}` | Input aliases mapped to IRB command names. |
+| `:LOAD_MODULES` | Array | `[]` | Modules to `require` at startup. Only the initial value is used. |
+
+**Example: disable automatic indentation**
+
+```ruby
+# ~/.irbrc
+IRB.conf[:AUTO_INDENT] = false
+```
+
+**Example: custom command aliases**
+
+```ruby
+# ~/.irbrc
+IRB.conf[:COMMAND_ALIASES] = {
+  foo: :show_source,
+  bar: :whereami,
+}
+```
+
+---
+
+## Output
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `:ECHO` | Boolean / nil | `nil` | Whether return values are printed. `nil` behaves as `true`. |
+| `:ECHO_ON_ASSIGNMENT` | Boolean / Symbol / nil | `nil` | Whether return values of assignment statements are printed. `nil` behaves as `:truncate`. Accepted values: `true`, `false`, `:truncate`. |
+| `:INSPECT_MODE` | Boolean | `true` | When `true`, return values are formatted with `Object#inspect`. |
+| `:USE_COLORIZE` | Boolean | `true` | Whether syntax highlighting is applied to input and output. Disabled when `NO_COLOR` is set. |
+| `:USE_PAGER` | Boolean | `true` | Whether a pager is used for long output such as documentation. |
+| `:VERBOSE` | Boolean / nil | `nil` | Whether IRB prints verbose details. `nil` means not set by the user. |
+| `:EVAL_HISTORY` | Integer / nil | `nil` | Maximum number of evaluation results to store. `0` stores all. `nil` disables the history. |
+| `:MEASURE` | Boolean | `false` | Whether performance measurement is active. |
+| `:MEASURE_CALLBACKS` | Array | `[]` | Registered measurement callback entries. Managed via `IRB.set_measure_callback`. |
+| `:MEASURE_PROC` | Hash | _(built-in procs)_ | Procs for each measurement type (`:TIME`, `:STACKPROF`). |
+
+**Example: suppress assignment echoing**
+
+```ruby
+# ~/.irbrc
+IRB.conf[:ECHO_ON_ASSIGNMENT] = false
+```
+
+**Example: enable evaluation history for last 20 results**
+
+```ruby
+# ~/.irbrc
+IRB.conf[:EVAL_HISTORY] = 20
+```
+
+---
+
+## Completion
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `:USE_AUTOCOMPLETE` | Boolean | `true` | Enables or disables tab-completion. Controlled also by `IRB_USE_AUTOCOMPLETE` env var. |
+| `:COMPLETOR` | Symbol / nil | `nil` | Selects the completion engine: `:regexp` for `IRB::RegexpCompletor` (default), `:type` for `IRB::TypeCompletor`. |
+
+**Example: use type-based completion**
+
+```ruby
+# ~/.irbrc
+IRB.conf[:COMPLETOR] = :type
+```
+
+---
+
+## History
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `:SAVE_HISTORY` | Integer / nil | `1000` | Number of input commands saved to the history file. Positive = that many entries; negative = all; `0` or `nil` = none. |
+| `:HISTORY_FILE` | String / nil | `nil` | Path to the history file. Defaults to `.irb_history` in the configuration file directory, or `~/` if no config file was found. |
+
+**Example: increase history size**
+
+```ruby
+# ~/.irbrc
+IRB.conf[:SAVE_HISTORY] = 10_000
+```
+
+**Example: set a custom history file path**
+
+```ruby
+# ~/.irbrc
+IRB.conf[:HISTORY_FILE] = "#{ENV['HOME']}/.cache/irb_history"
+```
+
+---
+
+## Prompts
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `:PROMPT_MODE` | Symbol | `:DEFAULT` | Name of the active prompt set. Must match a key in `:PROMPT`. |
+| `:PROMPT` | Hash | _(see below)_ | Hash of named prompt definitions. Each value is a hash with `:PROMPT_I`, `:PROMPT_S`, `:PROMPT_C`, and `:RETURN` keys. |
+
+The default `:PROMPT` hash contains these pre-defined modes:
+
+```ruby
+{
+  :NULL    => { :PROMPT_I => nil, :PROMPT_S => nil, :PROMPT_C => nil,
+                :RETURN => "%s\n" },
+  :DEFAULT => { :PROMPT_I => "%N(%m):%03n> ", :PROMPT_S => "%N(%m):%03n%l ",
+                :PROMPT_C => "%N(%m):%03n* ", :RETURN => "=> %s\n" },
+  :CLASSIC => { :PROMPT_I => "%N(%m):%03n:%i> ", :PROMPT_S => "%N(%m):%03n:%i%l ",
+                :PROMPT_C => "%N(%m):%03n:%i* ", :RETURN => "%s\n" },
+  :SIMPLE  => { :PROMPT_I => ">> ", :PROMPT_S => "%l> ",
+                :PROMPT_C => "?> ", :RETURN => "=> %s\n" },
+  :INF_RUBY => { :PROMPT_I => "%N(%m):%03n> ", :PROMPT_S => nil,
+                 :PROMPT_C => nil, :RETURN => "%s\n", :AUTO_INDENT => true },
+  :XMP     => { :PROMPT_I => nil, :PROMPT_S => nil, :PROMPT_C => nil,
+                :RETURN => "    ==>%s\n" },
+}
+```
+
+**Example: define a custom prompt**
+
+```ruby
+# ~/.irbrc
+IRB.conf[:PROMPT][:MY_PROMPT] = {
+  :PROMPT_I => "irb> ",
+  :PROMPT_S => "...> ",
+  :PROMPT_C => " *> ",
+  :RETURN   => "# => %s\n",
+}
+IRB.conf[:PROMPT_MODE] = :MY_PROMPT
+```
+
+---
+
+## Debugging
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `:USE_TRACER` | Boolean | `false` | When `true`, prints a stack trace for each evaluated input command. |
+| `:BACK_TRACE_LIMIT` | Integer | `16` | Maximum number of backtrace entries shown at the top and bottom of a backtrace display. |
+| `:USE_LOADER` | Boolean | `false` | When `true`, uses the IRB loader for `require` and `load` calls. |
+
+**Example: enable the tracer with a short backtrace**
+
+```ruby
+# ~/.irbrc
+IRB.conf[:USE_TRACER] = true
+IRB.conf[:BACK_TRACE_LIMIT] = 5
+```
+
+---
+
+## Documentation
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `:EXTRA_DOC_DIRS` | Array | `[]` | Additional RI documentation directories loaded at startup. Only the initial value is used. |
+
+**Example: add a custom documentation directory**
+
+```ruby
+# ~/.irbrc
+IRB.conf[:EXTRA_DOC_DIRS] = %w[/path/to/my_gem/doc]
+```
+
+---
+
+## Misc
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `:COPY_COMMAND` | String / nil | `nil` | Overrides the clipboard program used by the `copy` command. When `nil`, IRB auto-detects the platform clipboard tool (`pbcopy`, `xclip`, or `clip.exe`). Can also be set via the `IRB_COPY_COMMAND` environment variable. |
+| `:SHOW_BANNER` | Boolean | `true` | Whether IRB displays a startup banner message when the session begins. |
+
+**Example: override the clipboard program**
+
+```ruby
+# ~/.irbrc
+IRB.conf[:COPY_COMMAND] = "xclip -selection clipboard"
+```

@@ -1,97 +1,81 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "IRB — Interactive Ruby"
+description: "Ruby's built-in REPL for evaluating expressions, debugging programs, and exploring your codebase interactively."
 ---
 
-## Setting up
+IRB (Interactive Ruby) is a command-line tool that lets you type Ruby code and see results immediately. It ships with every Ruby installation and is the default console for Rails — no setup required.
 
-Get your documentation site up and running in minutes.
-
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Get the latest version of IRB or upgrade your existing installation.
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Start a session and run your first Ruby expressions in minutes.
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Commands" icon="terminal" href="/commands">
+    Explore built-in commands like `ls`, `show_source`, `show_doc`, and `whereami`.
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="Debugging" icon="bug" href="/debugging">
+    Use `binding.irb` breakpoints and `debug.gem` integration for step-debugging.
   </Card>
-</Columns>
+  <Card title="Configuration" icon="gear" href="/configuration/overview">
+    Customize IRB with `.irbrc`, environment variables, and `IRB.conf`.
+  </Card>
+  <Card title="Extending IRB" icon="puzzle-piece" href="/extending/overview">
+    Add custom commands and helper methods to your IRB sessions.
+  </Card>
+</CardGroup>
 
-## Create beautiful pages
+## What IRB does
 
-Everything you need to create world-class documentation.
+IRB operates as a **Read-Eval-Print Loop** (REPL):
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+- **Reads** input character by character with syntax-aware editing
+- **Evaluates** code once it forms a syntactically complete expression
+- **Prints** the result with syntax-highlighted, inspected output
 
-## Need inspiration?
+```shell
+$ irb
+irb(main):001> 1 + 2
+=> 3
+irb(main):002* class Greeter
+irb(main):003*   def hello(name)
+irb(main):004*     "Hello, #{name}!"
+irb(main):005*   end
+irb(main):006> end
+=> :hello
+irb(main):007> Greeter.new.hello("Ruby")
+=> "Hello, Ruby!"
+```
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+## Key features
+
+<CardGroup cols={2}>
+  <Card title="Breakpoint debugging" icon="circle-stop" href="/debugging">
+    Drop `binding.irb` anywhere in your code to open an IRB session in context.
+  </Card>
+  <Card title="Smart autocompletion" icon="wand-magic-sparkles" href="/history-and-completion">
+    Tab-complete methods, constants, and variables — with optional type-based completion.
+  </Card>
+  <Card title="Source browsing" icon="magnifying-glass" href="/commands">
+    Use `show_source` and `show_doc` to inspect any method or class without leaving IRB.
+  </Card>
+  <Card title="Extensible API" icon="plug" href="/extending/overview">
+    Register custom commands and helper methods using the official extension API.
+  </Card>
+</CardGroup>
+
+<Steps>
+  <Step title="Start IRB">
+    Run `irb` from your terminal. IRB is included with Ruby — no installation needed.
+  </Step>
+  <Step title="Evaluate expressions">
+    Type any Ruby expression and press Enter. IRB evaluates it and prints the result.
+  </Step>
+  <Step title="Explore your code">
+    Use `ls`, `show_source`, and `show_doc` to inspect objects and methods on the fly.
+  </Step>
+  <Step title="Customize your session">
+    Add configuration to `~/.irbrc` to set your preferred prompt, history size, and more.
+  </Step>
+</Steps>

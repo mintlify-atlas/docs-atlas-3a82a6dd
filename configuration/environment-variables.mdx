@@ -1,0 +1,196 @@
+---
+title: "Environment variables"
+description: "Environment variables that control IRB's behavior, with accepted values and examples."
+---
+
+IRB reads several environment variables at startup. You can set these in your shell profile or export them inline before running `irb`.
+
+## Color and display
+
+### NO_COLOR
+
+Disables all of IRB's syntax highlighting and colorized output. IRB follows the [no-color.org](https://no-color.org) convention: if this variable is set to any non-empty value, color is disabled.
+
+| Detail | Value |
+|--------|-------|
+| Accepted values | Any non-empty string |
+| Equivalent conf key | `IRB.conf[:USE_COLORIZE]` |
+
+```shell
+NO_COLOR=1 irb
+```
+
+```shell
+export NO_COLOR=true
+irb
+```
+
+---
+
+## Completion
+
+### IRB_USE_AUTOCOMPLETE
+
+Controls whether tab-completion is enabled. Set to `false` to disable it. Any other value (or the absence of the variable) leaves autocomplete enabled.
+
+| Detail | Value |
+|--------|-------|
+| Accepted values | `"false"` to disable; anything else enables |
+| Default | Enabled |
+| Equivalent conf key | `IRB.conf[:USE_AUTOCOMPLETE]` |
+
+```shell
+IRB_USE_AUTOCOMPLETE=false irb
+```
+
+### IRB_COMPLETOR
+
+Selects the completion engine. IRB provides two built-in completors:
+
+| Value | Engine | Notes |
+|-------|--------|-------|
+| `regexp` | `IRB::RegexpCompletor` | Default; fast, pattern-based |
+| `type` | `IRB::TypeCompletor` | Type-analysis based; requires `repl_type_completor` gem |
+
+| Detail | Value |
+|--------|-------|
+| Accepted values | `"regexp"` or `"type"` |
+| Equivalent conf key | `IRB.conf[:COMPLETOR]` |
+
+```shell
+IRB_COMPLETOR=type irb
+```
+
+---
+
+## Clipboard
+
+### IRB_COPY_COMMAND
+
+Overrides the default program IRB uses to interface with the system clipboard (used by the `copy` command). If not set, IRB auto-detects the clipboard command for your platform.
+
+| Detail | Value |
+|--------|-------|
+| Accepted values | A shell command string |
+| Equivalent conf key | `IRB.conf[:COPY_COMMAND]` |
+
+```shell
+IRB_COPY_COMMAND=xclip irb
+```
+
+```shell
+IRB_COPY_COMMAND="xclip -selection clipboard" irb
+```
+
+---
+
+## Editor
+
+### VISUAL
+
+Specifies the editor to open when using IRB's `edit` command. IRB checks `VISUAL` first, then falls back to `EDITOR`.
+
+| Detail | Value |
+|--------|-------|
+| Accepted values | A shell command or path to an editor binary |
+
+```shell
+export VISUAL=vim
+irb
+```
+
+### EDITOR
+
+Fallback editor when `VISUAL` is not set. Used by the `edit` command.
+
+| Detail | Value |
+|--------|-------|
+| Accepted values | A shell command or path to an editor binary |
+
+```shell
+export EDITOR=nano
+irb
+```
+
+---
+
+## Configuration file
+
+### IRBRC
+
+Specifies the exact path to IRB's configuration file. When set, this path is checked first — before all other locations — during [config file resolution](/configuration/overview#configuration-file-path-resolution).
+
+| Detail | Value |
+|--------|-------|
+| Accepted values | An absolute or relative file path |
+| Equivalent conf key | `IRB.conf[:RC]` (set to `false` if no file found) |
+
+```shell
+IRBRC=~/.config/irb/custom_irbrc irb
+```
+
+### XDG_CONFIG_HOME
+
+Used to locate the user-specific IRB configuration file. When set, IRB looks for `$XDG_CONFIG_HOME/irb/irbrc`. When not set, IRB falls back to `$HOME/.config/irb/irbrc`.
+
+| Detail | Value |
+|--------|-------|
+| Accepted values | An absolute directory path |
+
+```shell
+export XDG_CONFIG_HOME=~/.config
+irb
+# looks for ~/.config/irb/irbrc
+```
+
+---
+
+## Pager
+
+### RI_PAGER
+
+Specifies the pager program to use when displaying RI documentation output (for example, from `show_doc`). IRB checks `RI_PAGER` first, then falls back to `PAGER`.
+
+| Detail | Value |
+|--------|-------|
+| Accepted values | A pager command (e.g., `less`, `more`, `bat`) |
+
+```shell
+export RI_PAGER=less
+irb
+```
+
+### PAGER
+
+Fallback pager when `RI_PAGER` is not set.
+
+| Detail | Value |
+|--------|-------|
+| Accepted values | A pager command |
+
+```shell
+export PAGER="less -R"
+irb
+```
+
+---
+
+## Locale
+
+IRB checks the following variables in order to determine the locale for its messages. The first variable that is set and non-empty wins.
+
+| Variable | Role |
+|----------|------|
+| `IRB_LANG` | IRB-specific locale override |
+| `LC_MESSAGES` | Locale for message categories |
+| `LC_ALL` | Overrides all other `LC_*` variables |
+| `LANG` | Fallback system locale |
+
+```shell
+export LANG=en_US.UTF-8
+irb
+```
+
+```shell
+IRB_LANG=ja_JP irb
+```

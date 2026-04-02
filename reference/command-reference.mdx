@@ -1,0 +1,633 @@
+---
+title: "Command reference"
+description: "Complete reference for all built-in IRB commands, including syntax, flags, and examples."
+---
+
+IRB ships with a set of built-in commands that are available in every session. Run `help` to list them, or `help <command>` for information about a specific command.
+
+Commands are organized into the following groups: [Context](#context), [IRB](#irb), [Workspace](#workspace), [Debugging](#debugging), [Misc](#misc).
+
+<Note>
+  The aliases `$` and `@` are available by default: `$` maps to `show_source` and `@` maps to `whereami`. You can inspect or change aliases with `conf.command_aliases`.
+</Note>
+
+---
+
+## Context
+
+These commands help you inspect and navigate the objects in your session.
+
+### `ls`
+
+List methods, constants, and variables available on an object or in the current scope.
+
+```text
+Usage: ls [obj] [-g pattern]
+```
+
+| Flag | Description |
+|------|-------------|
+| `-g pattern` / `-G pattern` | Filter output to names matching the given pattern (regexp). |
+
+<Tabs>
+  <Tab title="List current scope">
+    ```ruby
+    irb(main):001> ls
+    # Shows methods, constants, locals available in main
+    ```
+  </Tab>
+  <Tab title="List an object">
+    ```ruby
+    irb(main):001> ls String
+    # Lists constants, class methods, and instance methods of String
+    ```
+  </Tab>
+  <Tab title="Filter with -g">
+    ```ruby
+    irb(main):001> ls String -g up
+    # Only shows entries matching /up/
+    ```
+  </Tab>
+</Tabs>
+
+The output is paged and color-coded. Methods are grouped by the module that defines them, making it easy to see where each method comes from.
+
+---
+
+### `show_source`
+
+Display the source code of a method, class, module, or constant. Alias: `$`.
+
+```text
+Usage: show_source [target] [-s]
+```
+
+| Flag | Description |
+|------|-------------|
+| `-s` | Show the super method instead. Stack flags like `-ss` to go further up the inheritance chain. |
+
+<Tabs>
+  <Tab title="Class or module">
+    ```ruby
+    irb(main):001> show_source Foo
+    ```
+  </Tab>
+  <Tab title="Instance method">
+    ```ruby
+    irb(main):001> show_source Foo#bar
+    ```
+  </Tab>
+  <Tab title="Class method">
+    ```ruby
+    irb(main):001> show_source Foo.baz
+    ```
+  </Tab>
+  <Tab title="Constant">
+    ```ruby
+    irb(main):001> show_source Foo::BAR
+    ```
+  </Tab>
+  <Tab title="Super method">
+    ```ruby
+    irb(main):001> show_source Foo#bar -s
+    # Use -ss to go one more level up
+    ```
+  </Tab>
+</Tabs>
+
+<Note>
+  `show_source` cannot display source for methods implemented in C. For those, use `show_doc` to read the RI documentation instead.
+</Note>
+
+---
+
+### `show_doc`
+
+Look up RI documentation for a class, module, or method. When called without arguments, starts an interactive RI session.
+
+```text
+Usage: show_doc [name]
+```
+
+<Tabs>
+  <Tab title="Class documentation">
+    ```ruby
+    irb(main):001> show_doc Array
+    ```
+  </Tab>
+  <Tab title="Method documentation">
+    ```ruby
+    irb(main):001> show_doc Array#each
+    ```
+  </Tab>
+  <Tab title="Interactive RI session">
+    ```ruby
+    irb(main):001> show_doc
+    # Starts an interactive RI session
+    ```
+  </Tab>
+</Tabs>
+
+<Warning>
+  `show_doc` requires the `rdoc` gem. If it is not installed, IRB will print a warning.
+</Warning>
+
+---
+
+### `whereami`
+
+Show the source code surrounding the current `binding.irb` breakpoint. Alias: `@`.
+
+```text
+Usage: whereami
+```
+
+```ruby
+# In test.rb:
+def greet(word)
+  binding.irb
+  puts "Hello #{word}"
+end
+
+greet("World")
+```
+
+```text
+irb(main):001> whereami
+
+From: test.rb @ line 2 :
+
+    1: def greet(word)
+ => 2:   binding.irb
+    3:   puts "Hello #{word}"
+    4: end
+```
+
+If the current context has no associated source file (e.g., a plain `irb` session), IRB prints `The current context doesn't have code.`
+
+---
+
+### `cd`
+
+Navigate into an object, making it the new implicit receiver (`self`). IRB uses a workspace stack to track context.
+
+```text
+Usage: cd ([target] | ..)
+```
+
+| Argument | Behavior |
+|----------|----------|
+| `object` | Pushes `object` onto the workspace stack and enters its context. |
+| `..` | Pops the current workspace, returning to the previous context. |
+| _(none)_ | Pops all workspaces, returning to the top-level context. |
+
+```ruby
+irb(main):001> cd String
+irb(String):002> instance_methods(false).first(3)
+=> [:encode, :encode!, :unicode_normalize]
+irb(String):003> cd ..
+irb(main):004>
+```
+
+---
+
+## IRB
+
+Commands that control the IRB session itself.
+
+### `history`
+
+Show the input history for the current session, most recent first.
+
+```text
+Usage: history [-g pattern]
+```
+
+| Flag | Description |
+|------|-------------|
+| `-g pattern` / `-G pattern` | Filter output to entries matching the given pattern (regexp). |
+
+```text
+irb(main):001> history
+5: ls String
+4: "hello".upcase
+3: 1 + 2
+...
+```
+
+```text
+irb(main):001> history -g upcase
+4: "hello".upcase
+```
+
+Multi-line inputs are shown with up to two lines displayed and `...` to indicate truncation.
+
+---
+
+### `context`
+
+Display the current IRB configuration, including prompt mode, inspect mode, completion settings, and more.
+
+```text
+Usage: context
+```
+
+```text
+irb(main):001> context
+#<IRB::Context:0x...
+  ...
+  @prompt_mode=:DEFAULT,
+  ...
+>
+```
+
+---
+
+### `irb_info`
+
+Show diagnostic information about the running IRB session: Ruby version, IRB version, input method, completion mode, rc file paths, and platform details.
+
+```text
+Usage: irb_info
+```
+
+```text
+irb(main):001> irb_info
+Ruby version: 3.3.0
+IRB version: 1.13.0
+InputMethod: #<IRB::RelineInputMethod:0x...>
+Completion: Autocomplete, RegexpCompletor
+.irbrc paths: /home/user/.irbrc
+RUBY_PLATFORM: x86_64-linux
+```
+
+---
+
+### `help`
+
+List all available commands, or show help for a specific command.
+
+```text
+Usage: help [command]
+```
+
+```text
+irb(main):001> help
+# Lists all commands grouped by category
+
+irb(main):001> help show_source
+# Shows usage and flags for show_source
+```
+
+---
+
+### `exit` / `exit!`
+
+Exit the current IRB session. `exit!` exits the entire Ruby process rather than just the current session.
+
+```text
+Usage: exit
+Usage: exit!
+```
+
+---
+
+### `irb_load`
+
+Load and execute a Ruby file in the current session, similar to `Kernel#load`.
+
+```text
+Usage: irb_load FILE
+```
+
+---
+
+### `irb_require`
+
+Require a Ruby file in the current session, similar to `Kernel#require`.
+
+```text
+Usage: irb_require FILE
+```
+
+---
+
+### `source`
+
+Load a file into the current session, executing its contents as if they were typed interactively.
+
+```text
+Usage: source FILE
+```
+
+---
+
+### `disable_irb`
+
+Disable future `binding.irb` breakpoints in the current Ruby process.
+
+```text
+Usage: disable_irb
+```
+
+---
+
+## Workspace
+
+Commands for managing the workspace stack.
+
+### `cwws`
+
+Show the current workspace (the object that is the current `self`).
+
+```text
+Usage: cwws
+```
+
+---
+
+### `chws`
+
+Change the current workspace to a given object.
+
+```text
+Usage: chws [object]
+```
+
+---
+
+### `workspaces`
+
+List all workspaces currently on the stack.
+
+```text
+Usage: workspaces
+```
+
+---
+
+### `pushws`
+
+Push an object onto the workspace stack, entering its context.
+
+```text
+Usage: pushws [object]
+```
+
+---
+
+### `popws`
+
+Pop the top workspace off the stack, returning to the previous context.
+
+```text
+Usage: popws
+```
+
+---
+
+## Debugging
+
+These commands integrate with [`debug.gem`](https://github.com/ruby/debug). They are only available when IRB is started from a `binding.irb` breakpoint.
+
+<Note>
+  After running `debug`, the prompt changes from `irb(main)` to `irb:rdbg(main)`, indicating an active debug session. All `debug.gem` commands are then available alongside IRB's own commands.
+</Note>
+
+### `debug`
+
+Activate the `debug.gem` debugger and enter an `irb:rdbg` session.
+
+```text
+Usage: debug
+```
+
+```text
+irb(main):001> debug
+irb:rdbg(main):002>
+```
+
+<Warning>
+  Requires the `debug` gem. If using Bundler, add `gem "debug"` to your Gemfile.
+</Warning>
+
+---
+
+### `break`
+
+Start the debugger and immediately run its `break` command to set a breakpoint.
+
+```text
+Usage: break [location]
+```
+
+---
+
+### `catch`
+
+Start the debugger and run its `catch` command to catch an exception.
+
+```text
+Usage: catch [exception]
+```
+
+---
+
+### `next`
+
+Start the debugger and step to the next line (stepping over method calls).
+
+```text
+Usage: next
+```
+
+---
+
+### `step`
+
+Start the debugger and step into the next method call.
+
+```text
+Usage: step
+```
+
+---
+
+### `continue`
+
+Start the debugger and continue execution until the next breakpoint.
+
+```text
+Usage: continue
+```
+
+---
+
+### `finish`
+
+Start the debugger and run until the current method returns.
+
+```text
+Usage: finish
+```
+
+---
+
+### `backtrace`
+
+Start the debugger and display the current call stack.
+
+```text
+Usage: backtrace
+```
+
+---
+
+### `info`
+
+Start the debugger and display information about the current frame (local variables, etc.).
+
+```text
+Usage: info
+```
+
+---
+
+### `delete`
+
+Start the debugger and delete a breakpoint.
+
+```text
+Usage: delete [breakpoint]
+```
+
+---
+
+## Misc
+
+### `measure`
+
+Toggle execution time measurement for expressions evaluated in IRB.
+
+```text
+Usage: measure [type | :off | :on | :list]
+```
+
+| Argument | Behavior |
+|----------|----------|
+| _(none)_ | Enable the default `:time` measurement. |
+| `:off` | Disable all active measurements. |
+| `:on` | Enable measurement (same as no argument). |
+| `:stackprof` | Enable profiling via the `stackprof` gem. |
+| `:list` | List all currently active measurement callbacks. |
+
+<Tabs>
+  <Tab title="Enable timing">
+    ```ruby
+    irb(main):001> measure
+    TIME is added.
+    irb(main):002> "hello" * 1000
+    processing time: 0.000021s
+    => "hellohellohello..."
+    ```
+  </Tab>
+  <Tab title="Disable timing">
+    ```ruby
+    irb(main):001> measure :off
+    ```
+  </Tab>
+  <Tab title="stackprof">
+    ```ruby
+    irb(main):001> measure :stackprof
+    # Requires the stackprof gem
+    ```
+  </Tab>
+</Tabs>
+
+To add custom measurement callbacks, configure `IRB.conf[:MEASURE_PROC]` in your `~/.irbrc`.
+
+---
+
+### `edit`
+
+Open a file or the source location of a method or constant in your editor. IRB uses the `VISUAL` or `EDITOR` environment variable to determine which editor to launch.
+
+```text
+Usage: edit [FILE | constant | method_signature]
+```
+
+| Argument | Behavior |
+|----------|----------|
+| _(none)_ | Open the file where the current context was defined. |
+| `FILE` | Open the given file path. |
+| `Constant` | Locate and open the source file where the constant is defined. |
+| `Foo#bar` | Locate and open the source file where the method is defined. |
+
+```ruby
+irb(main):001> edit
+# Opens the current context's source file
+
+irb(main):001> edit Foo#bar
+command: 'vim'
+   path: /path/to/foo.rb
+```
+
+<Tip>
+  Set `VISUAL` or `EDITOR` in your shell profile so `edit` always opens your preferred editor.
+</Tip>
+
+---
+
+### `copy`
+
+Copy an expression's output to the system clipboard. Without arguments, copies the last evaluated result (`_`).
+
+```text
+Usage: copy ([expression])
+```
+
+| Argument | Behavior |
+|----------|----------|
+| `expression` | Evaluates `expression` and copies its inspected result to the clipboard. |
+| _(none)_ | Copies the last result (`_`) to the clipboard. |
+
+```ruby
+irb(main):001> copy User.all.to_a
+Copied to system clipboard
+
+irb(main):001> "hello".upcase
+=> "HELLO"
+irb(main):002> copy
+Copied to system clipboard
+```
+
+Supported clipboard backends: `pbcopy` (macOS), `xclip` (Linux), `clip.exe` (Windows). You can override the backend with `IRB.conf[:COPY_COMMAND]`.
+
+---
+
+## Aliases
+
+IRB defines two command aliases by default:
+
+| Alias | Command |
+|-------|---------|
+| `$` | `show_source` |
+| `@` | `whereami` |
+
+```ruby
+irb(main):001> conf.command_aliases
+=> {:"$"=>:show_source, :"@"=>:whereami}
+```
+
+You can view or modify aliases at any time:
+
+```ruby
+# Inspect current aliases
+irb(main):001> conf.command_aliases
+
+# Override aliases in ~/.irbrc
+IRB.conf[:COMMAND_ALIASES] = { foo: :show_source, bar: :whereami }
+
+# Modify aliases in the current session
+irb(main):001> conf.command_aliases[:dollar] = :show_source
+```

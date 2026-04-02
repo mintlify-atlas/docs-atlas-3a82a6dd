@@ -1,0 +1,294 @@
+---
+title: "History and completion"
+description: "Input history, evaluation history, tab completion, and type-based autocompletion in IRB."
+---
+
+IRB tracks two distinct kinds of history: *input history* (the commands you typed) and *evaluation history* (the values those commands returned). It also provides tab completion, with an optional type-aware backend for more precise suggestions.
+
+---
+
+## Input history
+
+### The history file
+
+By default, IRB saves up to **1000** input commands to a file named `.irb_history`. The file is stored in the same directory as your IRB configuration file if one exists, or in `~/` otherwise.
+
+Each new session appends to the file if it already exists.
+
+To change the file location, add to `~/.irbrc`:
+
+```ruby
+IRB.conf[:HISTORY_FILE] = "/path/to/custom_history"
+```
+
+During a session, `conf.history_file` returns the current path. Assigning a new path copies the history to that file and uses it going forward:
+
+```shell
+irb(main):001> conf.history_file
+=> "/home/you/.irb_history"
+irb(main):002> conf.history_file = "/tmp/irb_history"
+```
+
+### Configuring the history size
+
+To change how many commands are saved:
+
+```ruby
+IRB.conf[:SAVE_HISTORY] = 500   # save last 500 commands
+IRB.conf[:SAVE_HISTORY] = -1    # save all commands
+IRB.conf[:SAVE_HISTORY] = 0     # disable history saving
+```
+
+During a session:
+
+```shell
+irb(main):001> conf.save_history
+=> 1000
+irb(main):002> conf.save_history = 500
+```
+
+### Viewing and filtering history
+
+The `history` command shows your input history, most recent entries first:
+
+```shell
+irb(main):001> history
+3: exit
+2: puts "hello"
+1: 1 + 2
+0: irb
+```
+
+Use `-g` (or `-G`) followed by a pattern to filter the output:
+
+```shell
+irb(main):001> history -g def
+12: def greet(name)
+ 7: def add(a, b)
+```
+
+<Tip>
+  Filtering with `-g` accepts a regular expression, so patterns like `history -g Array#\w+` work as expected.
+</Tip>
+
+---
+
+## Evaluation history
+
+By default, IRB does not store evaluation history (return values). You can enable it by setting the maximum number of evaluations to retain.
+
+In `~/.irbrc`:
+
+```ruby
+IRB.conf[:EVAL_HISTORY] = 5
+```
+
+Or during a session:
+
+```shell
+irb(main):001> conf.eval_history = 5
+=> 5
+```
+
+Setting the value to `0` retains all evaluations.
+
+### The `_` variable
+
+Once evaluation history is enabled, `_` holds the most recent return value:
+
+```shell
+irb(main):001> conf.eval_history = 5
+=> 5
+irb(main):002> :foo
+=> :foo
+irb(main):003> :bar
+=> :bar
+irb(main):004> _
+=> :bar
+```
+
+### The `__` variable
+
+`__` holds the full evaluation history. You can index into it by line number or by negative offset:
+
+```shell
+irb(main):008> :foo
+=> :foo
+irb(main):009> :bar
+=> :bar
+irb(main):010> :baz
+=> :baz
+irb(main):011> :bat
+=> :bat
+irb(main):012> :bam
+=> :bam
+irb(main):013> __
+=>
+9 :bar
+10 :baz
+11 :bat
+12 :bam
+13 ...self-history...
+```
+
+Positive index — returns the value from that line number:
+
+```shell
+irb(main):015> __[12]
+=> :bam
+irb(main):016> __[1]
+=> nil
+```
+
+Negative index — returns the nth-from-last evaluation:
+
+```shell
+irb(main):017> __[-3]
+=> :bam
+irb(main):018> __[-13]
+=> nil
+```
+
+Zero always returns `nil`:
+
+```shell
+irb(main):019> __[0]
+=> nil
+```
+
+---
+
+## Autocomplete
+
+### Tab completion
+
+IRB enables tab completion by default. Press **Tab** to complete the current token. If there are multiple candidates, pressing **Tab** again cycles through them. Press **Shift-Tab** to cycle in reverse.
+
+To disable autocomplete, add to `~/.irbrc`:
+
+```ruby
+IRB.conf[:USE_AUTOCOMPLETE] = false
+```
+
+Or pass `--noautocomplete` on the command line.
+
+To check the current setting:
+
+```shell
+irb(main):001> conf.use_autocomplete?
+=> true
+```
+
+<Note>
+  The autocomplete setting cannot be changed during a session. Set it in `~/.irbrc` before starting IRB.
+</Note>
+
+### Default completion: `IRB::RegexpCompletor`
+
+By default, IRB uses `IRB::RegexpCompletor`, which completes method names and constants using regular expressions applied to the known set of methods and variables. It is fast and requires no additional gems.
+
+---
+
+## Type-based completion
+
+`IRB::TypeCompletor` is an experimental completion backend that uses static type analysis to offer more accurate suggestions, including chained method calls and block parameters.
+
+### Installing
+
+Install the `repl_type_completor` gem:
+
+```shell
+gem install repl_type_completor
+```
+
+Or add it to your `Gemfile`:
+
+```ruby
+gem 'irb'
+gem 'repl_type_completor', group: [:development, :test]
+```
+
+### Enabling
+
+<Tabs>
+  <Tab title="Command line">
+    ```shell
+    irb --type-completor
+    ```
+  </Tab>
+  <Tab title="~/.irbrc">
+    ```ruby
+    IRB.conf[:COMPLETOR] = :type  # default is :regexp
+    ```
+  </Tab>
+  <Tab title="Environment variable">
+    ```ruby
+    ENV['IRB_COMPLETOR'] = 'type'
+    IRB.start
+    ```
+  </Tab>
+</Tabs>
+
+### Verifying
+
+Run `irb_info` and check the `Completion` line:
+
+```shell
+irb(main):001> irb_info
+...
+# Enabled
+Completion: Autocomplete, ReplTypeCompletor: 0.1.0, Prism: 0.18.0, RBS: 3.3.0
+# Not enabled
+Completion: Autocomplete, RegexpCompletor
+```
+
+If you have a `sig/` directory or a `rbs_collection.lock.yaml` in the working directory, IRB will load it automatically to improve completion accuracy.
+
+### What type-based completion enables
+
+`IRB::TypeCompletor` can complete cases that `IRB::RegexpCompletor` cannot, because it tracks the type of values as they flow through your code.
+
+Chained method calls:
+
+```shell
+irb(main):001> 'Ruby'.upcase.chars.s
+# completes Array methods: sample, select, shift, size
+```
+
+Block parameters:
+
+```shell
+irb(main):001> 10.times.map(&:to_s).each do |s|
+irb(main):002>   s.up
+# completes String methods: upcase, upcase!, upto
+```
+
+Application model methods (when run inside a Rails console, for example):
+
+```shell
+irb(main):001> class User < ApplicationRecord
+irb(main):002>   def foo
+irb(main):003>     sa
+# completes: save, save!
+```
+
+Runtime-informed completions using actual object types:
+
+```shell
+irb(main):001> a = [1]
+=> [1]
+irb(main):002> a.first.
+# completes Integer methods, because a.first is known to be an Integer at runtime
+```
+
+### Trade-offs
+
+Type-based completion takes slightly longer to compute than regexp-based completion. For most expressions the delay is imperceptible, but it may be noticeable on very large codebases or slow machines.
+
+`IRB::TypeCompletor` does not currently implement type narrowing, so conditional branches do not restrict the completion set:
+
+```ruby
+def f(arg = [0, 'a'].sample)
+  if arg.is_a?(String)
+    arg.   # completes both Integer and String methods
+```

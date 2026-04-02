@@ -1,0 +1,83 @@
+---
+title: "Installation"
+description: "IRB ships with Ruby as a default gem. This page covers how to upgrade to the latest version or pin a specific version in your project."
+---
+
+<Note>
+  IRB is a default gem bundled with Ruby. If you have Ruby installed, you already have IRB — no separate installation is needed.
+</Note>
+
+## Check your current version
+
+Confirm the version of IRB that came with your Ruby installation:
+
+```shell
+$ irb --version
+irb 1.17.0 (2026-02-08)
+```
+
+## Upgrade IRB
+
+IRB releases independently from Ruby. To upgrade to the latest version without waiting for a new Ruby release, install it directly with RubyGems:
+
+```shell
+$ gem install irb
+```
+
+After installing, verify the upgrade:
+
+```shell
+$ irb --version
+irb 1.17.0 (2026-02-08)
+```
+
+<Tip>
+  If `irb --version` still shows the old version after upgrading, your shell may be using a cached path. Run `gem environment` to confirm where gems are installed, or restart your terminal session.
+</Tip>
+
+## Add IRB to your Gemfile
+
+To pin a specific version of IRB in a project managed by Bundler, add it to your `Gemfile`:
+
+```ruby
+gem 'irb'
+```
+
+Then install dependencies:
+
+<CodeGroup>
+
+```shell bundle install
+$ bundle install
+```
+
+```shell bundle update irb
+$ bundle update irb
+```
+
+</CodeGroup>
+
+When using Bundler, run IRB through Bundler to ensure it uses the version from your `Gemfile.lock`:
+
+```shell
+$ bundle exec irb
+```
+
+## Ruby version requirement
+
+IRB v1.17.0 requires Ruby 2.7 or later. The gem will not install on older Ruby versions.
+
+<Warning>
+  Ruby 2.6 and earlier shipped with an older version of IRB that lacks many current features. Upgrading IRB via `gem install irb` is supported on Ruby 2.6 and later, but Ruby 2.7 or later is required for the current gem version.
+</Warning>
+
+## Dependencies
+
+IRB depends on the following gems, which are installed automatically:
+
+| Gem | Purpose |
+|-----|---------|
+| `reline` | Multi-line input editing and history |
+| `rdoc` | Documentation lookup via `show_doc` |
+| `prism` | Ruby parser used for syntax analysis |
+| `pp` | Pretty-printing of complex return values |

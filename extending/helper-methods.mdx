@@ -1,0 +1,137 @@
+---
+title: "Helper methods"
+description: "Create and register custom IRB helper methods using IRB::HelperMethod::Base to provide shortcuts that return Ruby objects in your IRB sessions."
+---
+
+Helper methods are Ruby methods accessible in the IRB session. Unlike commands, they are designed to return Ruby objects that you can interact with directly — chaining method calls, passing them to other methods, or inspecting them.
+
+```text
+irb(main):001> my_helper("foo", kwarg: "bar").upcase
+=> "ARG: FOO, KWARG: BAR"
+```
+
+The main use case is providing shortcuts to frequently accessed objects or operations. For example, an `admin_user` helper that returns `User.where(admin: true).first` lets you type `admin_user.posts.count` instead of the full query every time.
+
+See [Extending IRB](/extending/overview) for guidance on choosing between helper methods and commands.
+
+## Creating a helper method
+
+<Steps>
+  <Step title="Require the helper method module">
+    Require `irb/helper_method` at the top of your extension file. This is a lightweight require — it loads only the minimum components needed to define and register a helper method. It does not load all of IRB or initialize a session.
+
+    ```ruby
+    require "irb/helper_method"
+    ```
+  </Step>
+
+  <Step title="Define a class inheriting from IRB::HelperMethod::Base">
+    Create a class that inherits from `IRB::HelperMethod::Base`.
+
+    ```ruby
+    class MyHelper < IRB::HelperMethod::Base
+    end
+    ```
+  </Step>
+
+  <Step title="Set a description">
+    The `description` class attribute controls the one-line summary shown in IRB's help listing under the `Helper methods` section.
+
+    ```ruby
+    class MyHelper < IRB::HelperMethod::Base
+      description "This is a test helper"
+    end
+    ```
+  </Step>
+
+  <Step title="Implement the execute method">
+    Define an `execute` instance method. IRB calls this method when a user calls your helper in a session. You can use any combination of positional arguments, keyword arguments, and blocks.
+
+    ```ruby
+    class MyHelper < IRB::HelperMethod::Base
+      description "This is a test helper"
+
+      def execute(arg, kwarg:)
+        "arg: #{arg}, kwarg: #{kwarg}"
+      end
+    end
+    ```
+  </Step>
+
+  <Step title="Register the helper method with IRB">
+    Call `IRB::HelperMethod.register` with a symbol name and your class. The symbol becomes the method name available in the IRB session.
+
+    ```ruby
+    IRB::HelperMethod.register(:my_helper, MyHelper)
+    ```
+  </Step>
+</Steps>
+
+## Full example
+
+```ruby
+# This only loads the minimum components required to define and register a helper method.
+# It does not load the entire IRB, nor does it initialize it.
+require "irb/helper_method"
+
+class MyHelper < IRB::HelperMethod::Base
+  description "This is a test helper"
+
+  def execute(arg, kwarg:)
+    "arg: #{arg}, kwarg: #{kwarg}"
+  end
+end
+
+IRB::HelperMethod.register(:my_helper, MyHelper)
+```
+
+Once this code is loaded before the IRB session starts, `my_helper` is available as a regular Ruby method:
+
+```text
+irb(main):001> my_helper("foo", kwarg: "bar").upcase
+=> "ARG: FOO, KWARG: BAR"
+```
+
+Because helper methods return Ruby objects, you can chain further method calls on the result directly.
+
+## Help output
+
+Registered helper methods appear in the `Helper methods` section of the `help` listing:
+
+```text
+Helper methods
+  conf           Returns the current IRB context.
+  my_helper      This is a test helper
+```
+
+## Base class interface
+
+| Member | Type | Description |
+|---|---|---|
+| `description(text)` | Class method | Sets the one-line description shown in `help`. |
+| `execute(*args, **kwargs)` | Instance method | Called when the user invokes the helper in a session. Define arguments to match how you want users to call it. |
+
+<Note>
+  `IRB::HelperMethod::Base` includes Ruby's `Singleton` module, so each helper class has exactly one instance. The `execute` method is called on that instance.
+</Note>
+
+## Helper methods vs. commands
+
+| | Helper methods | Commands |
+|---|---|---|
+| **Return value** | Returns a Ruby object the user can interact with | Typically returns `nil`; output is via `puts` |
+| **Argument syntax** | Standard Ruby syntax: `helper("foo", kwarg: "bar")` | Accepts any string, including non-Ruby syntax: `cmd Foo#bar` |
+| **Use case** | Shortcuts to objects, chainable results | Utility operations, displaying information |
+| **Require** | `irb/helper_method` | `irb/command` |
+| **Base class** | `IRB::HelperMethod::Base` | `IRB::Command::Base` |
+
+## Where to put this code
+
+<CardGroup cols={2}>
+  <Card title="In .irbrc" icon="file">
+    Place the code in `~/.irbrc`. IRB evaluates this file on every startup, so the helper is always available in your personal sessions.
+  </Card>
+  <Card title="In a gem" icon="gem">
+    Ship the extension in a gem and have users `require` it in their `.irbrc`. This is the recommended approach for distributing extensions to others.
+  </Card>
+</CardGroup>

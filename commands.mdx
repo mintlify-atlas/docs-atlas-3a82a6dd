@@ -1,0 +1,329 @@
+---
+title: "Commands"
+description: "Built-in commands available in every IRB session, organized by category."
+---
+
+IRB includes a set of built-in commands you can run directly in the session without prefixing them with any special character. To see the full list at any time, type `help` at the prompt.
+
+```shell
+irb(main):001> help
+```
+
+Commands are grouped into the following categories.
+
+---
+
+## Help
+
+### `help`
+
+Lists all available commands, or shows usage for a specific command.
+
+```shell
+irb(main):001> help
+irb(main):002> help show_source
+```
+
+---
+
+## IRB session
+
+<AccordionGroup>
+  <Accordion title="context">
+    Displays the current IRB configuration (context). Equivalent to calling `conf`.
+
+    ```shell
+    irb(main):001> context
+    ```
+  </Accordion>
+
+  <Accordion title="exit / exit!">
+    `exit` exits the current IRB session. `exit!` exits the entire Ruby process immediately.
+
+    ```shell
+    irb(main):001> exit
+    ```
+  </Accordion>
+
+  <Accordion title="irb_load">
+    Loads a Ruby file, as if you had typed its contents into the session.
+
+    ```shell
+    irb(main):001> irb_load 'path/to/file.rb'
+    ```
+  </Accordion>
+
+  <Accordion title="irb_require">
+    Requires a Ruby file, using the standard `require` mechanism.
+
+    ```shell
+    irb(main):001> irb_require 'json'
+    ```
+  </Accordion>
+
+  <Accordion title="source">
+    Loads a given file in the current session context.
+
+    ```shell
+    irb(main):001> source 'path/to/file.rb'
+    ```
+  </Accordion>
+
+  <Accordion title="irb_info">
+    Shows diagnostic information about the current IRB session, including Ruby version, completion mode, and input method.
+
+    ```shell
+    irb(main):001> irb_info
+    ```
+  </Accordion>
+
+  <Accordion title="history">
+    Shows the input history. Use `-g` or `-G` followed by a pattern to filter results.
+
+    ```shell
+    irb(main):001> history
+    irb(main):002> history -g def
+    ```
+  </Accordion>
+
+  <Accordion title="disable_irb">
+    Disables future `binding.irb` breakpoints for the remainder of the process lifetime.
+
+    ```shell
+    irb(main):001> disable_irb
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Workspace
+
+IRB supports multiple workspaces, each with its own binding (receiver object and local variables).
+
+<AccordionGroup>
+  <Accordion title="cwws">
+    Shows the current workspace object.
+
+    ```shell
+    irb(main):001> cwws
+    => main
+    ```
+  </Accordion>
+
+  <Accordion title="chws">
+    Changes the current workspace to the given object.
+
+    ```shell
+    irb(main):001> chws "hello"
+    irb("hello"):002>
+    ```
+  </Accordion>
+
+  <Accordion title="workspaces">
+    Lists all open workspaces.
+
+    ```shell
+    irb(main):001> workspaces
+    ```
+  </Accordion>
+
+  <Accordion title="pushws">
+    Pushes an object onto the workspace stack and switches to it.
+
+    ```shell
+    irb(main):001> pushws []
+    ```
+  </Accordion>
+
+  <Accordion title="popws">
+    Pops the top workspace from the stack and returns to the previous one.
+
+    ```shell
+    irb(main):001> popws
+    ```
+  </Accordion>
+
+  <Accordion title="cd">
+    Moves into the given object. Use `cd ..` to return to the previous workspace, or `cd` with no arguments to return to the top-level workspace (clears all workspaces from the stack).
+
+    ```shell
+    irb(main):001> cd String
+    irb(String):002> cd ..
+    irb(main):003> cd String
+    irb(String):004> cd
+    irb(main):005>
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Debugging
+
+These commands activate `debug.gem` and forward the corresponding debugger instruction. They are only available when IRB is started via `binding.irb`.
+
+<Note>
+  You must be in a `binding.irb` breakpoint session before using these commands. See [Debugging](/debugging) for full details.
+</Note>
+
+| Command | Description |
+|---|---|
+| `debug` | Start the `debug.gem` debugger (`irb:rdbg` session). |
+| `break` | Set a breakpoint. |
+| `catch` | Set a catch-point on an exception class. |
+| `next` | Move to the next line (step over). |
+| `step` | Step into the next method call. |
+| `continue` | Continue execution until the next breakpoint. |
+| `finish` | Run until the current frame returns. |
+| `delete` | Delete a breakpoint. |
+| `backtrace` | Show the current call stack. |
+| `info` | Show local variables in the current frame. |
+
+```shell
+irb(main):001> debug
+irb:rdbg(main):002> info
+%self = main
+word = "World"
+irb:rdbg(main):003> next
+```
+
+---
+
+## Misc
+
+### `edit`
+
+Opens a file or the source location of a method or constant in your `$VISUAL` or `$EDITOR`.
+
+```shell
+irb(main):001> edit
+irb(main):002> edit foo.rb
+irb(main):003> edit Foo
+irb(main):004> edit Foo#bar
+```
+
+<Tip>
+  Set the `VISUAL` or `EDITOR` environment variable before starting IRB so that `edit` knows which editor to open.
+</Tip>
+
+### `measure`
+
+Enables timing output for every evaluated expression. `measure :off` disables it.
+
+```shell
+irb(main):001> measure
+TIME is added.
+irb(main):002> "hello" * 1000
+processing time: 0.000010s
+=> "hellohellohello..."
+irb(main):003> measure :off
+```
+
+### `copy`
+
+Copies the output of an expression to the clipboard.
+
+```shell
+irb(main):001> copy [1, 2, 3].map { |n| n * 2 }
+```
+
+---
+
+## Context and inspection
+
+### `show_source`
+
+Shows the source code of a method, class/module, or constant. Use `-s` to navigate to the super method.
+
+```shell
+irb(main):001> show_source Array#each
+irb(main):002> show_source Foo#bar -s
+irb(main):003> show_source Foo::BAR
+```
+
+The alias `$` is equivalent to `show_source`:
+
+```shell
+irb(main):001> $ Array#map
+```
+
+### `ls`
+
+Lists methods, constants, and variables available on an object or in the current scope. Use `-g` to filter by pattern.
+
+```shell
+irb(main):001> ls String
+irb(main):002> ls "hello" -g up
+irb(main):003> ls
+```
+
+Example output:
+
+```text
+String#methods:
+  %  *  +  <<  <=>  ==  =~  []  []=  ascii_only?  b  bytes  bytesize ...
+```
+
+### `show_doc`
+
+Looks up RI documentation for a class or method. Without an argument, opens an interactive RI session.
+
+```shell
+irb(main):001> show_doc
+irb(main):002> show_doc Array
+irb(main):003> show_doc Array#each
+```
+
+### `whereami`
+
+Redisplays the source code around the current `binding.irb` breakpoint. Useful after navigating with debug commands.
+
+```shell
+irb(main):001> whereami
+```
+
+The alias `@` is equivalent to `whereami`:
+
+```shell
+irb(main):001> @
+```
+
+---
+
+## Helper methods
+
+### `conf`
+
+Returns the current IRB context object. You can inspect and modify session configuration through it.
+
+```shell
+irb(main):001> conf
+=> #<IRB::Context ...>
+irb(main):002> conf.echo = false
+irb(main):003> conf.save_history = 500
+```
+
+---
+
+## Aliases
+
+IRB defines two built-in command aliases by default:
+
+| Alias | Command |
+|---|---|
+| `$` | `show_source` |
+| `@` | `whereami` |
+
+You can view or modify aliases at any time:
+
+```shell
+irb(main):001> conf.command_aliases
+=> {:"$"=>:show_source, :"@"=>:whereami}
+```
+
+To define custom aliases, add the following to your `~/.irbrc`:
+
+```ruby
+IRB.conf[:COMMAND_ALIASES] = { foo: :show_source, bar: :whereami }
+```

@@ -1,0 +1,66 @@
+---
+title: "Introduction"
+description: "IRB (Interactive Ruby) is a REPL that ships with Ruby for experimenting with code, debugging programs, and exploring APIs interactively."
+---
+
+IRB stands for "Interactive Ruby." It is a command-line tool that reads Ruby expressions, evaluates them, and prints the result — immediately, as you type. It ships with every Ruby installation, so there is nothing to set up.
+
+## What IRB is
+
+IRB operates as a **Read-Eval-Print Loop** (REPL):
+
+- **Reads** each character as you type, with syntax-aware multi-line editing
+- **Evaluates** the code once it forms a syntactically complete expression
+- **Prints** the result using `inspect`, with syntax highlighting
+
+Input is buffered until your code is syntactically complete. You can define a class across several lines and IRB will not evaluate it until the closing `end`:
+
+```shell
+$ irb
+irb(main):001> 1 + 2
+=> 3
+irb(main):002* class Foo
+irb(main):003*   def foo
+irb(main):004*     puts 1
+irb(main):005*   end
+irb(main):006> end
+=> :foo
+irb(main):007> Foo.new.foo
+1
+=> nil
+```
+
+The `>` prompt means IRB is ready for a new expression. The `*` prompt means the current expression is incomplete and IRB is waiting for more input.
+
+## Who uses IRB
+
+- **Ruby developers** experimenting with language features or prototyping small scripts
+- **Rails developers** using `rails console`, which runs on IRB
+- **Anyone debugging** Ruby code using `binding.irb` breakpoints
+
+## Key capabilities
+
+<CardGroup cols={2}>
+  <Card title="Built-in commands" icon="terminal" href="/commands">
+    IRB includes commands like `ls`, `show_source`, `show_doc`, and `whereami` for exploring objects and code without leaving the session.
+  </Card>
+  <Card title="Breakpoint debugging" icon="bug" href="/debugging">
+    Place `binding.irb` anywhere in your code to open an IRB session with the surrounding local variables and context in scope.
+  </Card>
+  <Card title="Autocompletion" icon="wand-magic-sparkles" href="/history-and-completion">
+    Tab-complete method names, constants, and variables. An optional type-based completor can complete chained methods and block parameters.
+  </Card>
+  <Card title="Extensible API" icon="plug" href="/extending/overview">
+    Since IRB v1.13.0, you can register custom commands and helper methods using the official extension API.
+  </Card>
+</CardGroup>
+
+## How it fits into the Ruby ecosystem
+
+IRB is a **default gem** — it is bundled with Ruby and available immediately after installing Ruby. You do not need to install anything extra to start using it.
+
+`rails console` in a Rails application opens an IRB session with the Rails environment loaded. Any IRB configuration, commands, or extensions you set up will work there too.
+
+<Tip>
+  Ready to try it? Head to the [Quickstart](/quickstart) to start a session and run your first expressions in minutes.
+</Tip>

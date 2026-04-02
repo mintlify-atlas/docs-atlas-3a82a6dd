@@ -1,80 +1,151 @@
 ---
 title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+description: "Start an IRB session, evaluate Ruby expressions, define classes, use binding.irb as a breakpoint, and run built-in commands."
 ---
 
-## Get started in three steps
+This guide walks you through the core IRB workflow from starting a session to using built-in commands and breakpoints.
 
-Get your documentation site running locally and make your first customization.
+<Steps>
+  <Step title="Start IRB">
+    Open a terminal and run:
 
-### Step 1: Set up your local environment
+    ```shell
+    $ irb
+    irb(main):001>
+    ```
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+    IRB is included with Ruby — no installation required. The prompt `irb(main):001>` tells you IRB is ready for input. The `main` refers to Ruby's top-level object, and `001` is the line number.
 
-### Step 2: Deploy your changes
+    To exit at any time, type `exit` and press Enter, or press `Ctrl+D`.
+  </Step>
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+  <Step title="Evaluate basic expressions">
+    Type any Ruby expression and press Enter. IRB evaluates it and prints the return value after `=>`:
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+    ```shell
+    irb(main):001> 1 + 2
+    => 3
+    irb(main):002> "hello".upcase
+    => "HELLO"
+    irb(main):003> [1, 2, 3].map { |n| n * 2 }
+    => [2, 4, 6]
+    ```
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+    The `=>` prefix marks the return value of the evaluated expression.
+  </Step>
 
-### Step 3: Go live
+  <Step title="Write multi-line input">
+    IRB detects when an expression is syntactically incomplete and waits for more input. The prompt changes from `>` to `*` while input is open:
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+    ```shell
+    irb(main):001> class Foo
+    irb(main):002*   def foo
+    irb(main):003*     puts 1
+    irb(main):004*   end
+    irb(main):005> end
+    => :foo
+    irb(main):006> Foo.new.foo
+    1
+    => nil
+    ```
+
+    IRB evaluates the class definition only after the closing `end` makes it syntactically complete. Automatic indentation helps you track the nesting level.
+  </Step>
+
+  <Step title="Use binding.irb as a breakpoint">
+    You can pause a running Ruby script and open an IRB session in its exact context using `binding.irb`. Create a file `test.rb`:
+
+    ```ruby
+    def greet(word)
+      binding.irb
+      puts "Hello #{word}"
+    end
+
+    greet("World")
+    ```
+
+    Run the file:
+
+    ```shell
+    $ ruby test.rb
+
+    From: test.rb @ line 2 :
+
+        1: def greet(word)
+     => 2:   binding.irb
+        3:   puts "Hello #{word}"
+        4: end
+        5:
+        6: greet("World")
+
+    irb(main):001> word
+    => "World"
+    irb(main):002> exit
+    Hello World
+    ```
+
+    IRB opens with the local variable `word` in scope. You can inspect variables, call methods, and evaluate expressions in the live context of your program. Type `exit` to resume execution.
+  </Step>
+
+  <Step title="Explore objects with built-in commands">
+    IRB includes commands for inspecting objects and source code. These are not Ruby methods — they are IRB commands available at the prompt.
+
+    **`ls` — list methods and constants**
+
+    ```shell
+    irb(main):001> ls String
+    String.methods: try_convert
+    String#methods:
+      %  *  +  <<  <=>  ==  ===  =~  []  []=  ascii_only?  b  bytes  bytesize
+      byteslice  capitalize  capitalize!  casecmp  casecmp?  center  chars  chomp
+      ...
+    ```
+
+    **`show_source` — display source code**
+
+    ```shell
+    irb(main):001> show_source String#upcase
+    ```
+
+    **`show_doc` — look up documentation**
+
+    ```shell
+    irb(main):001> show_doc Array#flatten
+    ```
+
+    **`help` — list all available commands**
+
+    ```shell
+    irb(main):001> help
+    ```
+
+    <Tip>
+      `$` is an alias for `show_source` and `@` is an alias for `whereami`. You can check your current aliases with `conf.command_aliases`.
+    </Tip>
+  </Step>
+</Steps>
+
+## Exit IRB
+
+| Method | Effect |
+|--------|--------|
+| `exit` | Exit the current IRB session |
+| `exit!` | Exit the current process immediately |
+| `Ctrl+D` | Send end-of-file to exit (same as `exit` by default) |
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
-
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Commands" icon="terminal" href="/commands">
+    Full reference for all built-in IRB commands.
+  </Card>
+  <Card title="Debugging" icon="bug" href="/debugging">
+    Use `binding.irb` with `debug.gem` for step-debugging, breakpoints, and frame navigation.
+  </Card>
+  <Card title="History and completion" icon="wand-magic-sparkles" href="/history-and-completion">
+    Configure tab completion, command history, and type-based autocompletion.
+  </Card>
+  <Card title="Configuration" icon="gear" href="/configuration/overview">
+    Customize your IRB session with `.irbrc` and `IRB.conf`.
+  </Card>
 </CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>

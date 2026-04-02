@@ -1,0 +1,150 @@
+---
+title: "Configuration overview"
+description: "How IRB configuration works, where settings come from, and in what order they take effect."
+---
+
+IRB draws its configuration from four sources, applied in a specific order. Understanding that order is the key to predicting which setting wins when sources conflict.
+
+## Configuration sources and precedence
+
+<Steps>
+  <Step title="Command-line options">
+    Options passed when starting IRB (for example, `--noecho` or `--prompt simple`) set the initial values of several `IRB.conf` entries.
+  </Step>
+  <Step title="Configuration file">
+    If a configuration file is found, IRB interprets it as Ruby code. Assignments made there write directly into `IRB.conf` and override whatever command-line options set.
+  </Step>
+  <Step title="Environment variables">
+    Certain environment variables are read at startup and influence specific settings — for example, `NO_COLOR` disables colorization.
+  </Step>
+  <Step title="IRB.conf hash">
+    `IRB.conf` holds all current settings. You can read it at any time inside a session and set values in your configuration file before the session context is built.
+  </Step>
+</Steps>
+
+<Warning>
+  Any conflict between an `IRB.conf` entry and a command-line option is resolved in favor of the `IRB.conf` entry. `IRB.conf` is read after options are parsed, so a value set in your `.irbrc` silently overrides the same option on the command line.
+</Warning>
+
+<Note>
+  `IRB.conf` affects the session context only once — when the configuration file is interpreted. Changes made to `IRB.conf` after that point have no effect on the running session.
+</Note>
+
+## Configuration file path resolution
+
+IRB searches for a configuration file by checking the following locations in order. The first file found is loaded; all subsequent locations are skipped.
+
+| Priority | Path |
+|----------|------|
+| 1 | `$IRBRC` |
+| 2 | `$XDG_CONFIG_HOME/irb/irbrc` |
+| 3 | `$HOME/.irbrc` |
+| 4 | `$HOME/.config/irb/irbrc` _(only when `XDG_CONFIG_HOME` is not set)_ |
+| 5 | `.irbrc` in the current directory |
+| 6 | `_irbrc` in the current directory |
+| 7 | `$irbrc` in the current directory |
+
+<Tip>
+  Set the `IRBRC` environment variable to use a configuration file at a non-standard path, or to share a single file across multiple projects.
+</Tip>
+
+To check whether a configuration file was loaded, call `conf.rc?` inside a session — it returns `true` if one was read. The same value is stored in `IRB.conf[:RC]`.
+
+## Skipping the configuration file
+
+Pass `-f` to skip the configuration file entirely:
+
+```shell
+irb -f
+```
+
+This is useful for debugging a configuration issue or for launching a clean session unaffected by your `.irbrc`.
+
+## Configuration monitor
+
+You can react to configuration changes by assigning a callable to `IRB.conf[:IRB_RC]` in your configuration file. IRB calls the proc each time the configuration changes, passing the context object as the argument:
+
+```ruby
+# ~/.irbrc
+IRB.conf[:IRB_RC] = proc { |conf| puts "Config changed: #{conf.class}" }
+```
+
+The default value is `nil` (no monitor).
+
+## Loading modules at startup
+
+`conf.load_modules` controls which Ruby modules are `require`d during session startup. The array is consumed once at startup, so only the initial value matters.
+
+Set modules via command-line option:
+
+```shell
+irb -r csv -r json
+```
+
+Or in your configuration file (this overrides command-line options):
+
+```ruby
+# ~/.irbrc
+IRB.conf[:LOAD_MODULES] = %w[csv json]
+```
+
+Confirm which modules are loaded inside a session:
+
+```ruby
+irb(main):001> conf.load_modules
+=> ["csv", "json"]
+```
+
+## RI documentation directories
+
+IRB can load additional RI documentation directories at startup so they are available to the `show_doc` command. Like `LOAD_MODULES`, only the initial value of `conf.extra_doc_dirs` is used.
+
+Set extra directories via command-line option:
+
+```shell
+irb --extra-doc-dir your_doc_dir --extra-doc-dir my_doc_dir
+```
+
+Or in your configuration file:
+
+```ruby
+# ~/.irbrc
+IRB.conf[:EXTRA_DOC_DIRS] = %w[your_doc_dir my_doc_dir]
+```
+
+Run `ri --help` for details on RI documentation conventions.
+
+## Example .irbrc file
+
+The following `.irbrc` shows a range of common settings drawn from real IRB options:
+
+```ruby
+# ~/.irbrc
+
+# Use type-based autocompletion (requires repl_type_completor gem)
+IRB.conf[:COMPLETOR] = :type
+
+# Keep 5000 history entries instead of the default 1000
+IRB.conf[:SAVE_HISTORY] = 5000
+
+# Don't echo the result of assignment statements
+IRB.conf[:ECHO_ON_ASSIGNMENT] = false
+
+# Use the simple prompt mode
+IRB.conf[:PROMPT_MODE] = :SIMPLE
+
+# Suppress verbose output
+IRB.conf[:VERBOSE] = false
+
+# Load frequently used libraries automatically
+IRB.conf[:LOAD_MODULES] = %w[pp]
+
+# Add custom command aliases
+IRB.conf[:COMMAND_ALIASES] = {
+  :"$" => :show_source,
+  :"@" => :whereami,
+}
+
+# Ignore Ctrl-D so you don't exit accidentally
+IRB.conf[:IGNORE_EOF] = true
+```

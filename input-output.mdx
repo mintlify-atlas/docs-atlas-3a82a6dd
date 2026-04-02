@@ -1,0 +1,283 @@
+---
+title: "Input and output"
+description: "How IRB reads expressions and prints results, and how to configure both behaviors."
+---
+
+IRB operates as a read-eval-print loop. The input side controls how you type expressions; the output side controls how results are displayed. Both are configurable through `IRB.conf` or the `conf` object inside a running session.
+
+---
+
+## Input
+
+### Auto-indentation
+
+IRB automatically indents lines inside blocks, classes, and other multi-line constructs to reflect their structure.
+
+```shell
+irb(main):001> conf.auto_indent_mode
+=> true
+irb(main):002* Dir.entries('.').select do |entry|
+irb(main):003*   entry.start_with?('R')
+irb(main):004> end
+=> ["README.md", "Rakefile"]
+```
+
+To disable auto-indentation, add this to `~/.irbrc`:
+
+```ruby
+IRB.conf[:AUTO_INDENT] = false
+```
+
+<Note>
+  The auto-indentation setting cannot be changed mid-session. Set it in `~/.irbrc` before IRB starts.
+</Note>
+
+### Multi-line expressions
+
+IRB detects when input is syntactically incomplete and waits for more. The prompt changes from `>` to `*` to indicate that input is continuing:
+
+```shell
+irb(main):001> class Foo
+irb(main):002*   def foo
+irb(main):003*     puts 1
+irb(main):004*   end
+irb(main):005> end
+=> :foo
+```
+
+IRB evaluates the expression only when it forms a syntactically complete Ruby statement.
+
+### Command aliases
+
+By default, IRB provides two aliases: `$` for `show_source` and `@` for `whereami`.
+
+```shell
+irb(main):001> conf.command_aliases
+=> {:"$"=>:show_source, :"@"=>:whereami}
+```
+
+To define your own aliases, add to `~/.irbrc`:
+
+```ruby
+IRB.conf[:COMMAND_ALIASES] = { foo: :show_source, bar: :whereami }
+```
+
+You can also modify the hash directly in a running session:
+
+```shell
+irb(main):001> conf.command_aliases[:doc] = :show_doc
+```
+
+### End-of-file (Ctrl-D)
+
+By default, pressing **Ctrl-D** exits the session. To ignore it instead:
+
+```ruby
+IRB.conf[:IGNORE_EOF] = true
+```
+
+During a session:
+
+```shell
+irb(main):001> conf.ignore_eof?
+=> false
+irb(main):002> conf.ignore_eof = true
+```
+
+### SIGINT (Ctrl-C)
+
+By default, **Ctrl-C** does not exit the session — it interrupts the current evaluation. To make Ctrl-C exit instead:
+
+```ruby
+IRB.conf[:IGNORE_SIGINT] = false
+```
+
+During a session:
+
+```shell
+irb(main):001> conf.ignore_sigint?
+=> true
+```
+
+### Input method
+
+IRB's input method determines how keystrokes are read. The default is `IRB::RelineInputMethod`, which supports multi-line editing, syntax highlighting, and completion.
+
+<Tabs>
+  <Tab title="Multiline (default)">
+    Uses `IRB::RelineInputMethod`. Supports multi-line editing, completion, and color.
+
+    ```shell
+    irb --multiline
+    ```
+
+    Or in `~/.irbrc`:
+
+    ```ruby
+    IRB.conf[:USE_MULTILINE] = true
+    ```
+  </Tab>
+  <Tab title="Singleline">
+    Uses `IRB::ReadlineInputMethod`. A simpler readline-based input without multi-line editing.
+
+    ```shell
+    irb --singleline
+    ```
+
+    Or in `~/.irbrc`:
+
+    ```ruby
+    IRB.conf[:USE_SINGLELINE] = true
+    ```
+  </Tab>
+  <Tab title="Stdio">
+    Uses `IRB::StdioInputMethod`. Plain stdin/stdout with no completion or editing. Activated when both `--nosingleline` and `--nomultiline` are given.
+
+    ```shell
+    irb --nosingleline --nomultiline
+    ```
+  </Tab>
+</Tabs>
+
+To check which input method is active:
+
+```shell
+irb(main):001> conf.use_multiline?
+=> nil
+irb(main):002> conf.use_singleline?
+=> nil
+```
+
+A `nil` return means neither flag was explicitly set; IRB used its default selection.
+
+---
+
+## Output
+
+### Return value echoing
+
+By default, IRB prints the return value of every evaluated expression:
+
+```shell
+irb(main):001> 1 + 2
+=> 3
+irb(main):002> "hello".upcase
+=> "HELLO"
+```
+
+To suppress all output, add to `~/.irbrc`:
+
+```ruby
+IRB.conf[:ECHO] = false
+```
+
+Or pass `--noecho` on the command line. During a session:
+
+```shell
+irb(main):001> conf.echo = false
+```
+
+### Echo on assignment
+
+When you assign a value to a variable, IRB echoes the result — but long values are truncated to fit on a single line. An ellipsis (`...`) indicates truncation:
+
+```shell
+irb(main):001> x = 'abc' * 100
+=> "abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabc..."
+```
+
+You can change this behavior:
+
+<Tabs>
+  <Tab title="Truncate (default)">
+    Long assignment results are shown on one line with `...`.
+
+    ```ruby
+    IRB.conf[:ECHO_ON_ASSIGNMENT] = :truncate
+    ```
+  </Tab>
+  <Tab title="Full">
+    Assignment results are always shown in full, regardless of length.
+
+    ```ruby
+    IRB.conf[:ECHO_ON_ASSIGNMENT] = true
+    ```
+
+    Command line: `--echo-on-assignment`
+  </Tab>
+  <Tab title="Off">
+    Assignment results are never echoed.
+
+    ```ruby
+    IRB.conf[:ECHO_ON_ASSIGNMENT] = false
+    ```
+
+    Command line: `--noecho-on-assignment`
+  </Tab>
+</Tabs>
+
+During a session:
+
+```shell
+irb(main):001> conf.echo_on_assignment = :truncate
+```
+
+### Inspect mode
+
+By default, IRB formats returned values using `Object#inspect`. This means strings are quoted, symbols show their colon, etc.
+
+```shell
+irb(main):001> "hello"
+=> "hello"
+irb(main):002> :foo
+=> :foo
+```
+
+To disable inspect mode, values are printed using `to_s` instead:
+
+```ruby
+IRB.conf[:INSPECT_MODE] = false
+```
+
+Command line: `--noinspect`. During a session:
+
+```shell
+irb(main):001> conf.inspect_mode = false
+```
+
+### Multiline output
+
+By default, IRB prepends a newline before multi-line output values:
+
+```shell
+irb(main):001> conf.inspect_mode = false
+=> false
+irb(main):002> "foo\nbar"
+=>
+foo
+bar
+```
+
+To remove the leading newline:
+
+```ruby
+IRB.conf[:NEWLINE_BEFORE_MULTILINE_OUTPUT] = false
+```
+
+During a session:
+
+```shell
+irb(main):001> conf.newline_before_multiline_output = false
+=> false
+irb(main):002> "foo\nbar"
+=> foo
+bar
+```
+
+### Pager
+
+Long output from commands like `ls` and `show_source` is automatically routed through a pager when the output exceeds the terminal height. This is handled internally by `IRB::Pager`.
+
+### Color highlighting
+
+IRB uses color highlighting for output when the terminal supports it. Syntax highlighting is applied to source code shown by `show_source` and `whereami`. Color is controlled by the `IRB::Color` module and respects standard `NO_COLOR` conventions.

@@ -1,0 +1,202 @@
+---
+title: "Debugging"
+description: "Use binding.irb breakpoints and debug.gem integration to inspect and navigate running Ruby programs."
+---
+
+IRB provides two complementary debugging experiences: `binding.irb` for dropping into an IRB session at any point in your code, and `debug.gem` integration for step-debugging with breakpoints, frame navigation, and thread control.
+
+---
+
+## `binding.irb` breakpoints
+
+Calling `binding.irb` anywhere in a Ruby program pauses execution and opens an IRB session with the surrounding context as the active binding. All local variables from that scope are accessible.
+
+### Example
+
+Given this file:
+
+```ruby
+def greet(word)
+  binding.irb
+  puts "Hello #{word}"
+end
+
+greet("World")
+```
+
+Running it drops you into IRB at line 2:
+
+```shell
+$ ruby test.rb
+
+From: test.rb @ line 2 :
+
+    1: def greet(word)
+ => 2:   binding.irb
+    3:   puts "Hello #{word}"
+    4: end
+    5:
+    6: greet("World")
+
+irb(main):001> word
+=> "World"
+irb(main):002> exit
+Hello World
+```
+
+The context shows the file, line number, and surrounding source. You can read and write local variables, call methods, and run any IRB command before resuming execution with `exit`.
+
+### Disabling breakpoints
+
+To prevent future `binding.irb` calls from pausing execution without removing them from the source:
+
+```shell
+irb(main):001> disable_irb
+```
+
+---
+
+## debug.gem integration
+
+Starting from IRB 1.8.0, you can activate `debug.gem` from within a `binding.irb` session. This switches the prompt to `irb:rdbg` and makes all `debug.gem` commands available alongside IRB commands.
+
+### Starting a debug session
+
+After hitting a `binding.irb` breakpoint, run `debug`:
+
+```shell
+From: test.rb @ line 3 :
+
+    1:
+    2: def greet(word)
+ => 3:   binding.irb
+    4:   puts "Hello #{word}"
+    5: end
+    6:
+    7: greet("World")
+
+irb(main):001> debug
+irb:rdbg(main):002>
+```
+
+<Note>
+  The `debug` command is only available when IRB is started via `binding.irb`. It requires the `debug` gem. If it is not installed, IRB will prompt you to add it.
+</Note>
+
+If `debug` is already defined as a method in the current scope, use `irb_debug` instead.
+
+### Navigating code
+
+Once in an `irb:rdbg` session, you can use `debug.gem` commands:
+
+**Inspect variables with `info`:**
+
+```shell
+irb:rdbg(main):002> info
+%self = main
+_ = nil
+word = "World"
+```
+
+**Step to the next line with `next`:**
+
+```shell
+irb:rdbg(main):003> next
+[1, 7] in test.rb
+     1|
+     2| def greet(word)
+     3|   binding.irb
+=>   4|   puts "Hello #{word}"
+     5| end
+     6|
+     7| greet("World")
+=>#0    Object#greet(word="World") at test.rb:4
+  #1    <main> at test.rb:7
+irb:rdbg(main):004>
+```
+
+**Step into a method call with `step`:**
+
+```shell
+irb:rdbg(main):004> step
+```
+
+**Set a breakpoint with `break`:**
+
+```shell
+irb:rdbg(main):004> break test.rb:10
+```
+
+**Continue to the next breakpoint with `continue`:**
+
+```shell
+irb:rdbg(main):004> continue
+```
+
+**Show the call stack with `backtrace`:**
+
+```shell
+irb:rdbg(main):004> backtrace
+=>#0    Object#greet(word="World") at test.rb:4
+  #1    <main> at test.rb:7
+```
+
+### Using IRB commands in an `irb:rdbg` session
+
+You retain full access to IRB commands while debugging. For example, `show_source` works alongside `debug.gem` commands:
+
+```shell
+irb:rdbg(main):004> show_source greet
+
+From: test.rb:2
+
+def greet(word)
+  binding.irb
+  puts "Hello #{word}"
+end
+```
+
+---
+
+## Advantages over `debug.gem`'s native console
+
+The IRB-integrated debugging experience offers several benefits compared to using `debug.gem`'s own console:
+
+<CardGroup cols={2}>
+  <Card title="IRB commands" icon="terminal">
+    Access `show_source`, `show_doc`, `ls`, `whereami`, and other IRB commands while stepping through code.
+  </Card>
+  <Card title="Multi-line input" icon="align-left">
+    Write multi-line Ruby expressions in the debugger prompt, including class and method definitions.
+  </Card>
+  <Card title="Symbol shortcuts" icon="bolt">
+    Use `@` for `whereami` and `$` for `show_source` while in an `irb:rdbg` session.
+  </Card>
+  <Card title="Autocompletion" icon="wand-magic-sparkles">
+    Tab completion, including type-based completion if `repl_type_completor` is installed.
+  </Card>
+</CardGroup>
+
+---
+
+## Limitations
+
+<Warning>
+  Be aware of these constraints when using IRB for debugging.
+</Warning>
+
+- **No `pre`/`do` arguments.** `binding.irb` does not support the `pre:` and `do:` arguments that `binding.break` from `debug.gem` accepts.
+- **No remote debugging.** IRB does not support remote connections, so it cannot be used with `debug.gem`'s remote debugging feature.
+- **`_` not available.** Access to the previous return value via `_` is not supported inside an `irb:rdbg` session.
+
+---
+
+## Using `debug.gem` as the default console
+
+You can make `debug.gem` use IRB as its console for all sessions by setting an environment variable before running your program:
+
+```shell
+RUBY_DEBUG_IRB_CONSOLE=1 ruby test.rb
+```
+
+This causes any `binding.break` call to open an `irb:rdbg` session instead of `debug.gem`'s default console.

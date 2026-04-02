@@ -1,0 +1,88 @@
+{
+  "projectType": "cli-tool",
+  "projectName": "IRB",
+  "projectDescription": "IRB (Interactive Ruby) is Ruby's built-in REPL that lets you interactively evaluate Ruby expressions, debug programs with breakpoints, and extend the session with custom commands.",
+  "theme": "palm",
+  "primaryColor": "#CC342D",
+  "lightColor": null,
+  "darkColor": null,
+  "navigation": {
+    "groups": [
+      {
+        "group": "Get Started",
+        "pages": [
+          "introduction",
+          "installation",
+          "quickstart"
+        ]
+      },
+      {
+        "group": "Using IRB",
+        "pages": [
+          "commands",
+          "input-output",
+          "history-and-completion",
+          "debugging"
+        ]
+      },
+      {
+        "group": "Configuration",
+        "pages": [
+          "configuration/overview",
+          "configuration/cli-options",
+          "configuration/environment-variables",
+          "configuration/conf-hash"
+        ]
+      },
+      {
+        "group": "Extending IRB",
+        "pages": [
+          "extending/overview",
+          "extending/custom-commands",
+          "extending/helper-methods"
+        ]
+      },
+      {
+        "group": "Reference",
+        "pages": [
+          "reference/command-reference",
+          "reference/compared-with-pry",
+          "reference/contributing"
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Interactive Ruby REPL with syntax highlighting and auto-completion",
+    "binding.irb breakpoint for in-process debugging sessions",
+    "debug.gem integration for step-debugging, frame navigation, and breakpoints",
+    "Type-based completion with IRB::TypeCompletor for chained method suggestions",
+    "Extensible via custom commands (IRB::Command::Base) and helper methods (IRB::HelperMethod::Base)",
+    "Configurable via .irbrc file, IRB.conf hash, environment variables, and CLI options",
+    "Built-in commands: ls, show_source, show_doc, whereami, edit, measure, history",
+    "Workspace navigation with pushws/popws/cd for exploring object contexts",
+    "Input history with filtering, persistent across sessions",
+    "Pager support for long output"
+  ],
+  "publicApiSurface": [
+    "irb (executable)",
+    "binding.irb",
+    "IRB.start",
+    "IRB.conf",
+    "IRB::Command::Base",
+    "IRB::Command.register",
+    "IRB::HelperMethod::Base",
+    "IRB::HelperMethod.register",
+    "IRB::Context (conf object)",
+    "IRB::RegexpCompletor",
+    "IRB::TypeCompletor",
+    "show_source",
+    "show_doc",
+    "ls",
+    "whereami",
+    "edit",
+    "measure",
+    "history",
+    "debug"
+  ]
+}

@@ -1,0 +1,170 @@
+---
+title: "Custom commands"
+description: "Create and register custom IRB commands using IRB::Command::Base to add utility operations and information displays to your IRB sessions."
+---
+
+Commands complete tasks or display information, similar to shell commands. They accept a wide variety of inputs, including arguments that are not valid Ruby syntax — for example, `my_cmd Foo#bar` or `my_cmd --flag foo`.
+
+Use commands when you need to perform utility operations, display information, or accept non-Ruby-syntax arguments. See [Extending IRB](/extending/overview) for guidance on choosing between commands and helper methods.
+
+## Creating a command
+
+<Steps>
+  <Step title="Require the command module">
+    At the top of your extension file (or `.irbrc`), require `irb/command`. This loads the minimum code needed to define and register commands without loading all of IRB.
+
+    ```ruby
+    require "irb/command"
+    ```
+  </Step>
+
+  <Step title="Define a class inheriting from IRB::Command::Base">
+    Create a class that inherits from `IRB::Command::Base`.
+
+    ```ruby
+    class Greet < IRB::Command::Base
+    end
+    ```
+  </Step>
+
+  <Step title="Set category, description, and help_message">
+    These class-level attributes control how the command appears in IRB's help output.
+
+    - `category` — Groups related commands together in the help listing. If you provide a new category name, a new section is created.
+    - `description` — One-line summary shown next to the command name in `help`.
+    - `help_message` — Full usage text displayed when a user runs `help <command>`. Optional, but recommended.
+
+    ```ruby
+    class Greet < IRB::Command::Base
+      category "Greeting"
+      description "Greets the user"
+      help_message <<~HELP
+        Greets the user with the given name.
+
+        Usage: greet <name>
+      HELP
+    end
+    ```
+  </Step>
+
+  <Step title="Implement the execute method">
+    Define an `execute(arg)` instance method. IRB calls this method when the user runs your command. Everything the user types after the command name is passed as a single string to `arg`. If the user provides nothing after the command name, `arg` is an empty string.
+
+    ```ruby
+    class Greet < IRB::Command::Base
+      category "Greeting"
+      description "Greets the user"
+      help_message <<~HELP
+        Greets the user with the given name.
+
+        Usage: greet <name>
+      HELP
+
+      def execute(arg)
+        puts "Hello! #{arg}"
+      end
+    end
+    ```
+  </Step>
+
+  <Step title="Register the command with IRB">
+    Call `IRB::Command.register` with a symbol name and your class. The symbol becomes the command name users type in IRB.
+
+    ```ruby
+    IRB::Command.register(:greet, Greet)
+    ```
+  </Step>
+</Steps>
+
+## Full example
+
+```ruby
+require "irb/command"
+
+class Greet < IRB::Command::Base
+  category "Greeting"
+  description "Greets the user"
+  help_message <<~HELP
+    Greets the user with the given name.
+
+    Usage: greet <name>
+  HELP
+
+  # Any input after the command name will be passed as a single string.
+  # If nothing is added after the command, an empty string will be passed.
+  def execute(arg)
+    puts "Hello! #{arg}"
+  end
+end
+
+IRB::Command.register(:greet, Greet)
+```
+
+Once this code is loaded before the IRB session starts, `greet` is available:
+
+```text
+irb(main):001> greet
+Hello!
+=> nil
+irb(main):002> greet Stan
+Hello! Stan
+=> nil
+```
+
+## Help output
+
+Because `Greet` sets `category "Greeting"`, a new section appears in the `help` listing:
+
+```text
+Help
+  help           List all available commands. Use `help <command>` to get information about a specific command.
+
+Greeting
+  greet          Greets the user
+
+IRB
+  context        Displays current configuration.
+  ...
+```
+
+Because `help_message` is set, running `help greet` displays the full usage text:
+
+```text
+irb(main):001> help greet
+Greets the user with the given name.
+
+Usage: greet <name>
+```
+
+## Base class interface
+
+| Member | Type | Description |
+|---|---|---|
+| `category(name)` | Class method | Sets the help category for the command. Defaults to `"No category"`. |
+| `description(text)` | Class method | Sets the one-line description shown in `help`. Defaults to `"No description provided."`. |
+| `help_message(text)` | Class method | Sets the detailed help text shown by `help <command>`. Optional — omit to skip detailed help. |
+| `execute(arg)` | Instance method | Called when the user runs the command. Receives everything after the command name as a single string. |
+| `irb_context` | Instance method | Returns the current `IRB::Context`. Available inside `execute`. |
+
+## Accessing IRB context
+
+Inside `execute`, you can access the current IRB context through `irb_context`. This gives you access to the current workspace, bindings, and configuration — the same way built-in commands like `ls` and `show_source` work.
+
+```ruby
+def execute(arg)
+  # Evaluate Ruby code in the current session's binding
+  result = irb_context.workspace.binding.eval(arg)
+  puts result.inspect
+end
+```
+
+## Where to put this code
+
+<CardGroup cols={2}>
+  <Card title="In .irbrc" icon="file">
+    Place the code in `~/.irbrc`. IRB evaluates this file on every startup, so the command is always available in your personal sessions.
+  </Card>
+  <Card title="In a gem" icon="gem">
+    Ship the extension in a gem and have users `require` it in their `.irbrc`. This is the recommended approach for distributing extensions to others.
+  </Card>
+</CardGroup>
